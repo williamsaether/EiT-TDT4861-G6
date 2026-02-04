@@ -1,4 +1,2 @@
 .idea
 data
-rscd_resnet18.pt
-rscd_resnet18.onnx
