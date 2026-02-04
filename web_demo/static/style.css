@@ -83,7 +83,24 @@ button:disabled {
   font-size: 12px;
 }
 
+.select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  min-width: 180px;
+}
+
 .interval input {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #2b4256;
+  background: #0f1b24;
+  color: var(--text);
+}
+
+.select select {
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid #2b4256;

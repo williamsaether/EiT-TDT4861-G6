@@ -25,10 +25,40 @@ UNEVEN_CLASSES = ["smooth", "slight", "severe"]
 MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
+CLASS_NAMES_FALLBACK = [
+    "dry_asphalt_severe",
+    "dry_asphalt_slight",
+    "dry_asphalt_smooth",
+    "dry_concrete_severe",
+    "dry_concrete_slight",
+    "dry_concrete_smooth",
+    "dry_gravel",
+    "dry_mud",
+    "fresh_snow",
+    "ice",
+    "melted_snow",
+    "water_asphalt_severe",
+    "water_asphalt_slight",
+    "water_asphalt_smooth",
+    "water_concrete_severe",
+    "water_concrete_slight",
+    "water_concrete_smooth",
+    "water_gravel",
+    "water_mud",
+    "wet_asphalt_severe",
+    "wet_asphalt_slight",
+    "wet_asphalt_smooth",
+    "wet_concrete_severe",
+    "wet_concrete_slight",
+    "wet_concrete_smooth",
+    "wet_gravel",
+    "wet_mud",
+]
 
 def get_class_names():
     if not TRAIN_DIR.exists():
-        raise FileNotFoundError(f"Missing train dir: {TRAIN_DIR}")
+        print(f"Missing train dir: {TRAIN_DIR}. Using fallback class list.")
+        return CLASS_NAMES_FALLBACK
     class_names = sorted([p.name for p in TRAIN_DIR.iterdir() if p.is_dir()])
     return class_names
 
