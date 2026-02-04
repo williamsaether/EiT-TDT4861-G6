@@ -1,0 +1,58 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RSCD Live Road Surface Demo</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <h1>RSCD Live Road Surface</h1>
+      <p>Local Mac demo using your camera feed.</p>
+    </header>
+
+    <section class="content">
+      <div class="video-card">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" width="224" height="224" hidden></canvas>
+        <div class="controls">
+          <button id="startBtn">Start Camera</button>
+          <button id="stopBtn" disabled>Stop</button>
+          <label class="interval">
+            Interval (ms)
+            <input id="interval" type="number" value="500" min="100" step="50" />
+          </label>
+        </div>
+      </div>
+
+      <div class="results">
+        <h2>Predictions</h2>
+        <div class="group">
+          <h3>Friction</h3>
+          <ul id="friction"></ul>
+        </div>
+        <div class="group">
+          <h3>Surface</h3>
+          <ul id="surface"></ul>
+        </div>
+        <div class="group">
+          <h3>Uneven</h3>
+          <ul id="uneven"></ul>
+        </div>
+        <div class="group">
+          <h3>Winter</h3>
+          <ul id="winter"></ul>
+        </div>
+        <div class="group">
+          <h3>Raw Top-5</h3>
+          <ul id="raw"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

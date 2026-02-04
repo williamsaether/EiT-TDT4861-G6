@@ -1,0 +1,4 @@
+﻿flask
+onnxruntime
+pillow
+numpy
