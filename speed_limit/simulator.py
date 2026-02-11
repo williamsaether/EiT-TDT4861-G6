@@ -1,26 +1,31 @@
 import time
-from nvdb_speed import get_speed_limit_data
+import nvdb_speed
 
 def simulate_drive():
+    # Nullstill global variabel før turen starter
+    nvdb_speed.LAST_VEGLENKE_ID = None 
+
     # En liste med koordinater som simulerer en kjøretur (eksempel: fra en vei til en annen)
     # Her kan du legge inn punkter fra Google Maps e.l.
     route = [
-        (63.435512, 10.275317), # Tømmerdalsveien
-        (63.435800, 10.276000), # Tømmerdalsveien videre
-        (63.333542, 10.356348), # Hopper til E6 (simulert sving/flytting)
-        (63.334000, 10.357000), # E6 videre
-        (59.833322, 10.410803)  # Hopper til Gamle Drammensvei
+        (59.835764, 10.423201),
+        (59.835746, 10.423010),
+        (59.835727, 10.422836),
+        (59.835735, 10.422685), # Kryss 1
+        (59.835705, 10.422611),
+        (59.835671, 10.422493), #Kryss 2
+        (59.835673, 10.422376),
     ]
 
     current_road = None
-    current_speed_limit = None
+    current_speed_limit = None  
 
     print("🚀 Starter kjøresimulering...\n")
 
     for i, (lat, lon) in enumerate(route):
         print(f"📍 Posisjon {i+1}: ({lat}, {lon})")
         
-        data = get_speed_limit_data(lat, lon)
+        data = nvdb_speed.get_speed_limit_data(lat, lon)
         
         if data:
             # Sjekk om vi har byttet vei eller fartsgrense
