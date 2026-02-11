@@ -53,7 +53,14 @@ def fetchCompact(lat, lon, altitude):
     print("Details:", current["data"]["instant"]["details"])
     return current
 
-fetchCompact(
+def getTempHumid(lat,lon,altitude):
+    res = fetchCompact(lat,lon,altitude)
+    data = res["data"]["instant"]["details"]
+    temp = data["air_temperature"]
+    humidity = data["relative_humidity"]
+    return {"temp": temp, "humidity": humidity}
+
+getTempHumid(
     63.417833,
     10.407466,
     100
