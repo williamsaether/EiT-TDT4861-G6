@@ -1,11 +1,13 @@
 ﻿<!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RSCD Live Road Surface Demo</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
+
 <body>
   <main class="page">
     <header class="header">
@@ -15,15 +17,31 @@
 
     <section class="content">
       <div class="video-card">
-        <video id="video" autoplay playsinline></video>
+        <video id="video" autoplay playsinline muted loop></video>
         <canvas id="canvas" width="224" height="224" hidden></canvas>
         <div class="controls">
-          <button id="startBtn">Start Camera</button>
-          <button id="stopBtn" disabled>Stop</button>
-          <label class="select">
-            Camera
-            <select id="cameraSelect"></select>
-          </label>
+          <div class="source-switch">
+            <label>
+              <input type="radio" name="source" value="camera" checked> Camera
+            </label>
+            <label>
+              <input type="radio" name="source" value="file"> Video File
+            </label>
+          </div>
+
+          <div id="cameraControls">
+            <button id="startBtn">Start Camera</button>
+            <button id="stopBtn" disabled>Stop</button>
+            <label class="select">
+              Camera
+              <select id="cameraSelect"></select>
+            </label>
+          </div>
+
+          <div id="fileControls" style="display: none;">
+            <input type="file" id="fileInput" accept="video/*,.mp4,.mov,.avi,.mkv">
+          </div>
+
           <label class="interval">
             Interval (ms)
             <input id="interval" type="number" value="500" min="100" step="50" />
@@ -59,4 +77,5 @@
 
   <script src="/static/app.js"></script>
 </body>
+
 </html>

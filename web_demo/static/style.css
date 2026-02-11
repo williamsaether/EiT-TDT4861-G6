@@ -6,7 +6,9 @@
   --muted: #9fb3c8;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -43,7 +45,7 @@ body {
   background: var(--panel);
   border-radius: 18px;
   padding: 16px;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
 video {
@@ -58,6 +60,47 @@ video {
   align-items: center;
   margin-top: 12px;
   flex-wrap: wrap;
+}
+
+.source-switch {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2b4256;
+}
+
+.source-switch label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.source-switch input[type="radio"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+#cameraControls,
+#fileControls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+#fileControls input[type="file"] {
+  background: #152736;
+  color: var(--text);
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid #2b4256;
+  font-size: 13px;
 }
 
 button {
@@ -112,7 +155,7 @@ button:disabled {
   background: var(--panel);
   border-radius: 18px;
   padding: 16px;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
 .results h2 {
