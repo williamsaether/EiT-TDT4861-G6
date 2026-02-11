@@ -2,18 +2,22 @@ import time
 import nvdb_speed
 
 def simulate_drive():
-    # Nullstill global variabel før turen starter
+    #! Nullstill global variabel før turen starter
     nvdb_speed.LAST_VEGLENKE_ID = None 
 
-    # En liste med koordinater som simulerer en kjøretur (eksempel: fra en vei til en annen)
-    # Her kan du legge inn punkter fra Google Maps e.l.
+    #* En liste med koordinater som simulerer en kjøretur (eksempel: fra en vei til en annen)
+    #* Her kan du legge inn punkter fra Google Maps e.l.
+
+    #* Dette er del av Gamle Drammensvei i Asker med to kryss. Hoveddelen av veien er 40 km/t,
+    #* mens to veier som krysser den har fartsgrense 30 km/t og 50 km/t henholdsvis.
+    #* Dette vil teste om smart logikken klarer å holde seg på samme vei i kryss og ikke "hoppe" til den nærmeste veien som kan ha en annen fartsgrense.
     route = [
         (59.835764, 10.423201),
         (59.835746, 10.423010),
         (59.835727, 10.422836),
         (59.835735, 10.422685), # Kryss 1
         (59.835705, 10.422611),
-        (59.835671, 10.422493), #Kryss 2
+        (59.835671, 10.422493), # Kryss 2
         (59.835673, 10.422376),
     ]
 
