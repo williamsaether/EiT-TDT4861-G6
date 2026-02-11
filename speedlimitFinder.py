@@ -96,7 +96,7 @@ def main():
         # "E6": (63.326244,10.334259),
         "E6 (80)": (63.333542, 10.356348),
         "Drammensveien (Asker)": (59.8336276,10.4215051),
-        "Kirkeveien (Asker)": (59.8341936,10.4241011), # Denne funker ikke
+        "Kirkeveien (Asker)": (59.834185,10.428984),
         "E18 (Asker, 60)": (59.8336673,10.4411366), # Denne strekningen på E18 har fartsgrense på 60 km/t, men det koden returnerer 90 km /t. Som det var tidligere. Strekningen er kort så den er kanskje ikke tatt med?
         "Gamle drammensvei (40)": (59.833322, 10.410803)
     }
