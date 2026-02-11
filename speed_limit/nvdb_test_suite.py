@@ -10,7 +10,7 @@ def run_tests():
         {"navn": "E6", "lat": 63.326244, "lon": 10.334259, "forventet_fart": 100},
     ]
 
-    print(f"{'TESTNAVN':<20} | {'STATUS':<10} | {'FUNNET':<15} | {'FORVENTET'}")
+    print(f"{'TESTNAVN':<20} | {'STATUS':<11} | {'FUNNET':<15} | {'FORVENTET'}")
     print("-" * 65)
 
     for case in test_cases:
