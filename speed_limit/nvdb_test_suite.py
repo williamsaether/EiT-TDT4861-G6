@@ -1,4 +1,4 @@
-from speed_limit.nvdb_speed import get_speed_limit_data
+from nvdb_speed import get_speed_limit_data
 
 def run_tests():
     test_cases = [

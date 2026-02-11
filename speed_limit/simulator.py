@@ -1,5 +1,5 @@
 import time
-from speed_limit.nvdb_speed import get_speed_limit_data
+from nvdb_speed import get_speed_limit_data
 
 def simulate_drive():
     # En liste med koordinater som simulerer en kjøretur (eksempel: fra en vei til en annen)
