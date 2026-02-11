@@ -64,12 +64,12 @@ def get_speed_limit_data(lat, lon):
                     
                     if fart:
                         return {
+                            "status": "ok",
                             "fartsgrense": int(fart),
                             "vei": veg_navn,
                             "avstand_meter": round(distanse, 1),
                             "full_info": f"{fart} km/t på {veg_navn}"
                         }
-        return None
+        return {"status":"error", "message": "Ingen fartsgrense funnet i nærheten"}
     except Exception as e:
-        print(f"Feil ved API-kall: {e}")
-        return None
+        return {"status":"error", "message": str(e)}
