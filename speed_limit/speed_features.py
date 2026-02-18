@@ -22,17 +22,35 @@ def one_hot_encode_road(road_class):
 
 def calculate_urbanization(road_class, speed_limit):
     """
-    Estimates urbanization (0.0 to 1.0)
-    High value = Urban (many pedestrians), Low value = Rural/Highway
+    Estimates urbanization (0.0 to 1.0).
+    Higher value = higher density of pedestrians, driveways, and complexity.
     """
-    # Logic: Low speed limits on Municipal/County roads = Very Urban
-    if road_class == "Kommunal vei" and speed_limit <= 40:
-        return 1.0
-    if road_class == "Fylkesvei" and speed_limit <= 50:
-        return 0.7
-    if road_class in ["Europavei", "Riksvei"] and speed_limit >= 80:
-        return 0.1
-    return 0.4 # Default middle ground
+    # 1. Municipal roads (Highest urbanization)
+    if road_class == "Kommunal vei":
+        if speed_limit <= 40:
+            return 1.0  # Typical residential area, many pedestrians / cyclists
+        if speed_limit <= 60:
+            return 0.7  # Collector road in city/town
+        return 0.5      # Municipal rural road
+
+    # 2. County roads (Medium/Varied)
+    if road_class == "Fylkesvei":
+        if speed_limit <= 50:
+            return 0.8  # Through traffic in town/village
+        if speed_limit <= 70:
+            return 0.4  # Typical country road with scattered buildings
+        return 0.2      # Higher standard county road
+
+    # 3. National and European roads (Lowest urbanization/Most isolated)
+    if road_class in ["Europavei", "Riksvei"]:
+        if speed_limit <= 60:
+            return 0.3  # Through traffic in urban-adjacent areas
+        if speed_limit <= 80:
+            return 0.1  # Standard country road/motor traffic road
+        return 0.0      # Motorway (completely isolated from surroundings)
+
+    # Default if road class is unknown
+    return 0.4
 
 def engineer_all_features(api_data, previous_speed_limit=None):
     """
