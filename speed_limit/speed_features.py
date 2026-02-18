@@ -58,7 +58,7 @@ def engineer_all_features(api_data, previous_speed_limit=None):
         "urbanization_idx": calculate_urbanization(road_class, fart),
         
         # 4. Speed Delta (If we have history)
-        "speed_delta": (fart - previous_speed_limit) if previous_speed_limit is not None else 0
+        "speed_delta": round((fart - previous_speed_limit)/110, 3) if previous_speed_limit is not None else 0
     }
     
     return features
