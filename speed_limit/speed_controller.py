@@ -28,7 +28,7 @@ class SpeedController:
 
 # Example usage
 controller = SpeedController()
-features1 = controller.get_ml_input_vector(59.833322, 10.410803)
 features2 = controller.get_ml_input_vector(63.326244, 10.334259)
-print(f"Gamle Drammensvei features: {features1}")
+features1 = controller.get_ml_input_vector(59.833322, 10.410803)
 print(f"E6 features: {features2}")
+print(f"Gamle Drammensvei features: {features1}")
