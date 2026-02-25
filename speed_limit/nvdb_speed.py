@@ -14,7 +14,7 @@ NVDB_HEADERS = {
 # --- LOGIKK-VALG ---
 # Sett denne til False for å bruke den gamle metoden (nærmeste vei uansett)
 # Sett denne til True for å bruke "Smart" metode (holde seg på samme vei i kryss)
-USE_SMART_LOGIC = True
+USE_SMART_LOGIC = False
 
 # Global variabel for å huske hvilken vei vi sist var på (brukes av smart logikk)
 LAST_VEGLENKE_ID = None
@@ -80,17 +80,26 @@ def get_speed_limit_data(lat, lon):
         if not pos_data:
             return {"status":"error", "message": "Ingen vei funnet"}
 
-        # --- METODE 1: SMART LOGIKK (Vei-lojalitet) ---
+        # --- METODE 1: SMART LOGIKK (Vei-lojalitet med forbedret sjekk) ---
         if USE_SMART_LOGIC and LAST_VEGLENKE_ID is not None:
-            # Sjekk om veien vi var på sist fortsatt er i topp 5 lista
+            # Finn den forrige veien i de nye resultatene
             prioritert_match = next((m for m in pos_data if m.get('veglenkesekvens', {}).get('veglenkesekvensid') == LAST_VEGLENKE_ID), None)
             
-            # Hvis vi fant den gamle veien, og den er innenfor rimelig avstand (f.eks 30m)
-            if prioritert_match and prioritert_match.get('avstand', 100) < 30:
-                resultat = _fetch_fartsgrense_for_match(prioritert_match)
-                if resultat:
-                    return resultat
+            # Finn den absolutt nærmeste veien i de nye resultatene
+            closest_match = pos_data[0]
 
+            if prioritert_match:
+                dist_gammel = prioritert_match.get('avstand', 100)
+                dist_ny = closest_match.get('avstand', 0)
+                
+                # LOGIKK: 
+                # Vi bytter vei hvis den nye veien er mer enn 10 meter nærmere enn den gamle.
+                # Dette hindrer "hopping" ved støy, men tillater svinging i kryss.
+                if dist_gammel < 30 and (dist_gammel - dist_ny) < 10:
+                    resultat = _fetch_fartsgrense_for_match(prioritert_match)
+                    if resultat:
+                        return resultat
+                    
         # --- METODE 2: NAIVE / STANDARD (Velg nærmeste som har fartsgrense) ---
         for match in pos_data:
             resultat = _fetch_fartsgrense_for_match(match)
