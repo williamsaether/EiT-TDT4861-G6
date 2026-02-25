@@ -30,7 +30,7 @@ except ImportError:
 # Try to import existing repo modules; fall back to built-in implementations
 # ---------------------------------------------------------------------------
 try:
-    from weatherData import get_weather_data as _repo_get_weather  # type: ignore
+    from weather_data.weather_data import get_weather_data as _repo_get_weather  # type: ignore
     _USE_REPO_WEATHER = True
 except ImportError:
     _USE_REPO_WEATHER = False
