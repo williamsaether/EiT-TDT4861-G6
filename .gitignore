@@ -1,4 +1,6 @@
 .idea
 data
 
+# CACHE
+__pycache__
 speed_limit/__pycache__
