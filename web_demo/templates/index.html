@@ -1,57 +1,198 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RSCD Live Road Surface Demo</title>
+  <title>Road Condition Dashboard</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <main class="page">
     <header class="header">
-      <h1>RSCD Live Road Surface</h1>
-      <p>Local Mac demo using your camera feed.</p>
+      <h1>Road Condition Controller</h1>
+      <p>Live fusion of weather, legal speed limit, and camera model outputs (v2 model — 12 classes).</p>
     </header>
 
-    <section class="content">
-      <div class="video-card">
-        <video id="video" autoplay playsinline></video>
-        <canvas id="canvas" width="224" height="224" hidden></canvas>
-        <div class="controls">
-          <button id="startBtn">Start Camera</button>
-          <button id="stopBtn" disabled>Stop</button>
-          <label class="select">
-            Camera
-            <select id="cameraSelect"></select>
+    <section class="layout">
+      <!-- LEFT: Controls -->
+      <div class="card controls-card">
+        <h2>Controller Settings</h2>
+
+        <div class="field">
+          <label for="videoInput">Demo Video Source</label>
+          <input id="videoInput" type="file" accept="video/*" />
+          <button id="uploadBtn">Upload Video</button>
+          <p id="uploadStatus" class="muted">No video uploaded.</p>
+        </div>
+
+        <div class="field row-4">
+          <label>
+            Latitude
+            <input id="latInput" type="number" value="63.4305" step="0.0001" />
           </label>
-          <label class="interval">
-            Interval (ms)
-            <input id="interval" type="number" value="500" min="100" step="50" />
+          <label>
+            Longitude
+            <input id="lonInput" type="number" value="10.3951" step="0.0001" />
           </label>
+          <label>
+            Altitude (m)
+            <input id="altInput" type="number" value="20" step="1" />
+          </label>
+          <label>
+            Custom Max Speed (km/h)
+            <input id="maxSpeedInput" type="number" min="1" step="1" placeholder="Empty = API limit" />
+          </label>
+        </div>
+
+        <!-- Weight tuning panel -->
+        <div class="field weight-panel">
+          <h3>Fusion Weights</h3>
+          <p class="muted">
+            <strong>Weather</strong> &amp; <strong>Camera</strong> are additive blend weights
+            (normalized to sum to 1). <strong>Conf. Sensitivity</strong> controls how much low
+            model confidence damps the camera reading toward a safe neutral — set to 0 to always
+            trust the raw camera factor regardless of confidence.
+          </p>
+
+          <div class="slider-grid">
+            <label class="slider-row">
+              <span class="slider-name">Weather</span>
+              <input id="weightWeather" type="range" value="45" min="0" max="100" step="1" />
+              <span id="weightWeatherValue" class="slider-value">45</span>
+            </label>
+            <label class="slider-row">
+              <span class="slider-name">Camera</span>
+              <input id="weightCamera" type="range" value="45" min="0" max="100" step="1" />
+              <span id="weightCameraValue" class="slider-value">45</span>
+            </label>
+            <label class="slider-row">
+              <span class="slider-name">Conf. Sensitivity</span>
+              <input id="weightConfidence" type="range" value="10" min="0" max="100" step="1" />
+              <span id="weightConfidenceValue" class="slider-value">10</span>
+            </label>
+          </div>
+
+          <p id="weightsPreview" class="preview"></p>
+          <p id="weightsStatus" class="muted"></p>
+        </div>
+
+        <!-- Camera window tuning -->
+        <div class="field weight-panel">
+          <h3>Camera Averaging Window</h3>
+          <p class="muted">
+            Predictions from the last <strong id="windowSecondsLabel">3.0</strong> s are averaged
+            before computing the camera factor. A longer window smooths jitter but reacts
+            more slowly to sudden surface changes.
+          </p>
+          <div class="slider-grid">
+            <label class="slider-row">
+              <span class="slider-name">Window (s)</span>
+              <input id="cameraWindowSlider" type="range" value="3" min="0.5" max="10" step="0.5" />
+              <span id="cameraWindowValue" class="slider-value">3.0</span>
+            </label>
+          </div>
+          <p id="windowFrameCount" class="muted"></p>
+        </div>
+
+        <div class="field actions">
+          <button id="startBtn">Start Pipeline</button>
+          <button id="stopBtn">Stop Pipeline</button>
+          <button id="resetHistogramBtn" class="ghost">Reset Distributions</button>
+        </div>
+
+        <div class="field">
+          <h3>Uploaded Video Preview</h3>
+          <video id="videoPreview" controls muted playsinline></video>
         </div>
       </div>
 
-      <div class="results">
-        <h2>Predictions</h2>
-        <div class="group">
-          <h3>Friction</h3>
-          <ul id="friction"></ul>
+      <!-- RIGHT: Live output -->
+      <div class="card output-card">
+        <h2>Live Output</h2>
+
+        <!-- Speed summary row -->
+        <div class="status-grid">
+          <div class="stat-box">
+            <p class="label">Controller</p>
+            <p id="runState" class="value">stopped</p>
+          </div>
+          <div class="stat-box">
+            <p class="label">Model</p>
+            <p id="modelState" class="value">loading</p>
+          </div>
+          <div class="stat-box">
+            <p class="label">API Speed Limit</p>
+            <p id="legalSpeed" class="value">-</p>
+          </div>
+          <div class="stat-box">
+            <p class="label">Custom Max</p>
+            <p id="userMaxSpeed" class="value">-</p>
+          </div>
+          <div class="stat-box accent">
+            <p class="label">Recommended</p>
+            <p id="recommendedSpeed" class="value large">-</p>
+          </div>
         </div>
-        <div class="group">
-          <h3>Surface</h3>
-          <ul id="surface"></ul>
+
+        <div class="reason-block">
+          <p class="label">Recommendation Reason</p>
+          <p id="recommendationReason">Waiting for data...</p>
         </div>
-        <div class="group">
-          <h3>Uneven</h3>
-          <ul id="uneven"></ul>
+
+        <!-- Factor breakdown: per-factor speeds + donut chart -->
+        <h3>Factor Breakdown</h3>
+        <div class="factor-layout">
+          <div class="factor-speeds">
+            <div class="factor-box weather-box">
+              <p class="label">If Weather Only</p>
+              <p id="weatherOnlySpeed" class="value">-</p>
+              <p id="weatherFactor" class="factor-detail">factor: -</p>
+            </div>
+            <div class="factor-box camera-box">
+              <p class="label">If Camera Only</p>
+              <p id="cameraOnlySpeed" class="value">-</p>
+              <p id="cameraFactor" class="factor-detail">factor: -</p>
+            </div>
+            <div class="factor-box combined-box">
+              <p class="label">Combined (actual)</p>
+              <p id="combinedFactor" class="value">-</p>
+              <p id="combinedLabel" class="factor-detail">combined factor</p>
+            </div>
+          </div>
+          <div class="factor-chart-wrap">
+            <p class="label chart-title">Speed Reduction Contribution (km/h)</p>
+            <canvas id="factorDonut" width="200" height="200"></canvas>
+            <p id="factorChartLegend" class="chart-legend"></p>
+          </div>
         </div>
-        <div class="group">
-          <h3>Winter</h3>
-          <ul id="winter"></ul>
+
+        <!-- Probability distribution charts -->
+        <h3>Live Accumulated Probability Distribution</h3>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <p class="label">Friction</p>
+            <canvas id="frictionChart" height="160"></canvas>
+          </div>
+          <div class="chart-card">
+            <p class="label">Surface</p>
+            <canvas id="surfaceChart" height="160"></canvas>
+          </div>
+          <div class="chart-card">
+            <p class="label">Winter Conditions</p>
+            <canvas id="winterChart" height="160"></canvas>
+          </div>
         </div>
-        <div class="group">
-          <h3>Raw Top-5</h3>
-          <ul id="raw"></ul>
+
+        <div class="columns">
+          <div>
+            <h3>Top Camera Predictions</h3>
+            <ul id="cameraGroups"></ul>
+          </div>
+          <div>
+            <h3>Weather + Speed Inputs</h3>
+            <ul id="sourceInfo"></ul>
+          </div>
         </div>
       </div>
     </section>
