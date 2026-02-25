@@ -51,7 +51,7 @@ ROOT = Path(__file__).resolve().parent.parent
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-MODEL_PATH = ROOT / "rscd_resnet18_v2.onnx"
+MODEL_PATH = ROOT / "models" / "rscd_resnet18_v2.onnx"
 IMAGE_SIZE = 224
 MAX_EVENTS = 300
 
