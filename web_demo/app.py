@@ -13,7 +13,7 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 ROOT = Path(__file__).resolve().parent.parent
 DATA_ROOT = ROOT / "data" / "RSCD dataset-1million"
 TRAIN_DIR = DATA_ROOT / "train"
-MODEL_PATH = ROOT / "rscd_resnet18.onnx"
+MODEL_PATH = ROOT / "rscd_resnet18_v3.onnx"
 
 IMAGE_SIZE = 224
 
@@ -55,12 +55,26 @@ CLASS_NAMES_FALLBACK = [
     "wet_mud",
 ]
 
-def get_class_names():
+CLASS_NAMES_MERGED_FALLBACK = [
+    "dry_asphalt",
+    "dry_gravel",
+    "dry_mud",
+    "fresh_snow",
+    "ice",
+    "melted_snow",
+    "water_asphalt",
+    "water_gravel",
+    "water_mud",
+    "wet_asphalt",
+    "wet_gravel",
+    "wet_mud",
+]
+
+
+def get_train_class_names():
     if not TRAIN_DIR.exists():
-        print(f"Missing train dir: {TRAIN_DIR}. Using fallback class list.")
-        return CLASS_NAMES_FALLBACK
-    class_names = sorted([p.name for p in TRAIN_DIR.iterdir() if p.is_dir()])
-    return class_names
+        return None
+    return sorted([p.name for p in TRAIN_DIR.iterdir() if p.is_dir()])
 
 
 def parse_groups(label_name: str):
@@ -86,10 +100,6 @@ def parse_groups(label_name: str):
     return friction, surface, uneven, winter
 
 
-CLASS_NAMES = get_class_names()
-IDX_TO_CLASS = {i: name for i, name in enumerate(CLASS_NAMES)}
-INDEX_GROUPS = {i: parse_groups(name) for i, name in IDX_TO_CLASS.items()}
-
 if not MODEL_PATH.exists():
     raise FileNotFoundError(
         f"Missing ONNX model at {MODEL_PATH}. "
@@ -98,6 +108,47 @@ if not MODEL_PATH.exists():
 
 SESSION = ort.InferenceSession(str(MODEL_PATH), providers=["CPUExecutionProvider"])
 INPUT_NAME = SESSION.get_inputs()[0].name
+OUTPUT_NAME = SESSION.get_outputs()[0].name
+
+
+def get_model_num_classes():
+    output_shape = SESSION.get_outputs()[0].shape
+    if len(output_shape) < 2 or output_shape[1] is None:
+        raise RuntimeError(
+            f"Model output shape is not fixed 2D logits: {output_shape}. "
+            "Expected [batch, num_classes]."
+        )
+    return int(output_shape[1])
+
+
+def resolve_class_names(model_num_classes: int):
+    train_class_names = get_train_class_names()
+    if train_class_names is not None and len(train_class_names) == model_num_classes:
+        print(f"Using class names from {TRAIN_DIR} ({len(train_class_names)} classes)")
+        return train_class_names
+
+    if model_num_classes == len(CLASS_NAMES_FALLBACK):
+        print("Using 27-class fallback labels (legacy model format).")
+        return CLASS_NAMES_FALLBACK
+    if model_num_classes == len(CLASS_NAMES_MERGED_FALLBACK):
+        print("Using 12-class fallback labels (merged model format).")
+        return CLASS_NAMES_MERGED_FALLBACK
+
+    raise RuntimeError(
+        "Could not resolve class names for model output size "
+        f"{model_num_classes}. Train dir has "
+        f"{len(train_class_names) if train_class_names is not None else 'N/A'} classes."
+    )
+
+
+MODEL_NUM_CLASSES = get_model_num_classes()
+CLASS_NAMES = resolve_class_names(MODEL_NUM_CLASSES)
+IDX_TO_CLASS = {i: name for i, name in enumerate(CLASS_NAMES)}
+INDEX_GROUPS = {i: parse_groups(name) for i, name in IDX_TO_CLASS.items()}
+
+ACTIVE_SURFACE_CLASSES = [s for s in SURFACE_CLASSES if any(parse_groups(c)[1] == s for c in CLASS_NAMES)]
+ACTIVE_UNEVEN_CLASSES = [u for u in UNEVEN_CLASSES if any(parse_groups(c)[2] == u for c in CLASS_NAMES)]
+MODEL_FORMAT = "legacy_27" if len(CLASS_NAMES) == 27 else ("merged_12" if len(CLASS_NAMES) == 12 else "custom")
 
 
 def preprocess(image: Image.Image) -> np.ndarray:
@@ -116,15 +167,20 @@ def topk(scores, k=3):
 
 def predict_grouped(image: Image.Image):
     x = preprocess(image)
-    logits = SESSION.run(None, {INPUT_NAME: x})[0]
+    logits = SESSION.run([OUTPUT_NAME], {INPUT_NAME: x})[0]
     probs = np.exp(logits - np.max(logits, axis=1, keepdims=True))
     probs = probs / probs.sum(axis=1, keepdims=True)
     probs = probs[0]
 
+    if len(probs) != len(CLASS_NAMES):
+        raise RuntimeError(
+            f"Logits length ({len(probs)}) does not match class names ({len(CLASS_NAMES)})."
+        )
+
     friction_scores = {k: 0.0 for k in FRICTION_CLASSES}
-    surface_scores = {k: 0.0 for k in SURFACE_CLASSES}
+    surface_scores = {k: 0.0 for k in ACTIVE_SURFACE_CLASSES}
     winter_scores = {k: 0.0 for k in WINTER_CLASSES}
-    uneven_scores = {k: 0.0 for k in UNEVEN_CLASSES}
+    uneven_scores = {k: 0.0 for k in ACTIVE_UNEVEN_CLASSES}
 
     for idx, p in enumerate(probs):
         friction, surface, uneven, winter = INDEX_GROUPS[idx]
@@ -138,6 +194,7 @@ def predict_grouped(image: Image.Image):
             winter_scores[winter] += float(p)
 
     return {
+        "model_format": MODEL_FORMAT,
         "friction": topk(friction_scores),
         "surface": topk(surface_scores),
         "uneven": topk(uneven_scores),
