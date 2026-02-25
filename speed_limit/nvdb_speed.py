@@ -14,7 +14,7 @@ NVDB_HEADERS = {
 # --- LOGIKK-VALG ---
 # Sett denne til False for å bruke den gamle metoden (nærmeste vei uansett)
 # Sett denne til True for å bruke "Smart" metode (holde seg på samme vei i kryss)
-USE_SMART_LOGIC = False
+USE_SMART_LOGIC = True
 
 # Global variabel for å huske hvilken vei vi sist var på (brukes av smart logikk)
 LAST_VEGLENKE_ID = None
