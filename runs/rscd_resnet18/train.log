@@ -1,0 +1,110 @@
+2026-02-24 23:11:59 | INFO | config: {"data_root": "data\\RSCD dataset-1million", "output_dir": "runs\\rscd_resnet18", "batch_size": 256, "image_size": 224, "epochs": 3, "lr": 0.0003, "weight_decay": 0.0001, "seed": 42, "use_pretrained": false, "compile_model": false, "num_workers": 8, "prefetch_factor": 2, "log_every": 100, "aug_profile": "default", "max_train_samples": null, "max_val_samples": null, "max_test_samples": null}
+2026-02-24 23:11:59 | INFO | device: cuda
+2026-02-24 23:11:59 | INFO | gpu: NVIDIA GeForce RTX 3060 Ti | 8.0 GB VRAM
+2026-02-24 23:11:59 | INFO | classes: 12
+2026-02-24 23:11:59 | INFO | building datasets...
+2026-02-24 23:12:07 | INFO | datasets built in 8.0s
+2026-02-24 23:12:07 | INFO | sizes | train=703279 val=13620 test=34550
+2026-02-24 23:12:07 | INFO | building sampler...
+2026-02-24 23:12:07 | INFO | sampler ready in 0.1s
+2026-02-24 23:12:07 | INFO | dataloaders | batch=256 workers=8 prefetch=2
+2026-02-24 23:12:07 | INFO | [timing] init iterator (workers=8, warmup=2, measure=12)
+2026-02-24 23:12:41 | INFO | [timing] first batch 3.286s
+2026-02-24 23:12:42 | INFO | [timing] steady-state 0.099s/batch
+2026-02-24 23:12:42 | INFO | model compile disabled
+2026-02-24 23:12:42 | INFO | starting training...
+2026-02-24 23:15:29 | INFO | epoch 1/3 | batch 100/2747 | loss 1.3670 acc 0.3473 | 153.1 img/s | eta 73.7m | gpu_mem 4.40GB
+2026-02-24 23:18:02 | INFO | epoch 1/3 | batch 200/2747 | loss 1.2195 acc 0.4155 | 167.8 img/s | eta 64.7m | gpu_mem 4.40GB
+2026-02-24 23:20:34 | INFO | epoch 1/3 | batch 300/2747 | loss 1.1307 acc 0.4532 | 167.8 img/s | eta 62.2m | gpu_mem 4.40GB
+2026-02-24 23:23:07 | INFO | epoch 1/3 | batch 400/2747 | loss 1.0576 acc 0.4853 | 167.8 img/s | eta 59.7m | gpu_mem 4.40GB
+2026-02-24 23:25:39 | INFO | epoch 1/3 | batch 500/2747 | loss 1.0078 acc 0.5062 | 167.8 img/s | eta 57.1m | gpu_mem 4.40GB
+2026-02-24 23:28:17 | INFO | epoch 1/3 | batch 600/2747 | loss 0.9640 acc 0.5252 | 162.5 img/s | eta 56.4m | gpu_mem 4.40GB
+2026-02-24 23:31:01 | INFO | epoch 1/3 | batch 700/2747 | loss 0.9273 acc 0.5419 | 156.0 img/s | eta 56.0m | gpu_mem 4.40GB
+2026-02-24 23:33:45 | INFO | epoch 1/3 | batch 800/2747 | loss 0.8996 acc 0.5548 | 156.2 img/s | eta 53.2m | gpu_mem 4.40GB
+2026-02-24 23:36:29 | INFO | epoch 1/3 | batch 900/2747 | loss 0.8711 acc 0.5677 | 155.9 img/s | eta 50.6m | gpu_mem 4.40GB
+2026-02-24 23:39:14 | INFO | epoch 1/3 | batch 1000/2747 | loss 0.8463 acc 0.5792 | 155.2 img/s | eta 48.0m | gpu_mem 4.40GB
+2026-02-24 23:41:50 | INFO | epoch 1/3 | batch 1100/2747 | loss 0.8234 acc 0.5896 | 164.1 img/s | eta 42.8m | gpu_mem 4.40GB
+2026-02-24 23:44:22 | INFO | epoch 1/3 | batch 1200/2747 | loss 0.8043 acc 0.5990 | 168.5 img/s | eta 39.2m | gpu_mem 4.40GB
+2026-02-24 23:46:54 | INFO | epoch 1/3 | batch 1300/2747 | loss 0.7869 acc 0.6074 | 168.6 img/s | eta 36.6m | gpu_mem 4.40GB
+2026-02-24 23:49:26 | INFO | epoch 1/3 | batch 1400/2747 | loss 0.7694 acc 0.6159 | 168.6 img/s | eta 34.1m | gpu_mem 4.40GB
+2026-02-24 23:51:57 | INFO | epoch 1/3 | batch 1500/2747 | loss 0.7538 acc 0.6236 | 168.6 img/s | eta 31.6m | gpu_mem 4.40GB
+2026-02-24 23:54:29 | INFO | epoch 1/3 | batch 1600/2747 | loss 0.7380 acc 0.6310 | 168.5 img/s | eta 29.0m | gpu_mem 4.40GB
+2026-02-24 23:57:01 | INFO | epoch 1/3 | batch 1700/2747 | loss 0.7247 acc 0.6376 | 168.5 img/s | eta 26.5m | gpu_mem 4.40GB
+2026-02-24 23:59:33 | INFO | epoch 1/3 | batch 1800/2747 | loss 0.7118 acc 0.6439 | 168.6 img/s | eta 24.0m | gpu_mem 4.40GB
+2026-02-25 00:02:05 | INFO | epoch 1/3 | batch 1900/2747 | loss 0.6991 acc 0.6500 | 168.5 img/s | eta 21.4m | gpu_mem 4.40GB
+2026-02-25 00:04:40 | INFO | epoch 1/3 | batch 2000/2747 | loss 0.6876 acc 0.6555 | 165.6 img/s | eta 19.3m | gpu_mem 4.40GB
+2026-02-25 00:07:07 | INFO | epoch 1/3 | batch 2100/2747 | loss 0.6771 acc 0.6607 | 173.9 img/s | eta 15.9m | gpu_mem 4.40GB
+2026-02-25 00:09:34 | INFO | epoch 1/3 | batch 2200/2747 | loss 0.6668 acc 0.6656 | 174.2 img/s | eta 13.4m | gpu_mem 4.40GB
+2026-02-25 00:12:01 | INFO | epoch 1/3 | batch 2300/2747 | loss 0.6574 acc 0.6703 | 174.3 img/s | eta 10.9m | gpu_mem 4.40GB
+2026-02-25 00:14:28 | INFO | epoch 1/3 | batch 2400/2747 | loss 0.6476 acc 0.6750 | 174.2 img/s | eta 8.5m | gpu_mem 4.40GB
+2026-02-25 00:16:55 | INFO | epoch 1/3 | batch 2500/2747 | loss 0.6387 acc 0.6792 | 174.2 img/s | eta 6.0m | gpu_mem 4.40GB
+2026-02-25 00:19:21 | INFO | epoch 1/3 | batch 2600/2747 | loss 0.6307 acc 0.6832 | 174.8 img/s | eta 3.6m | gpu_mem 4.40GB
+2026-02-25 00:21:47 | INFO | epoch 1/3 | batch 2700/2747 | loss 0.6225 acc 0.6871 | 175.5 img/s | eta 1.1m | gpu_mem 4.40GB
+2026-02-25 00:22:57 | INFO | epoch 1/3 | batch 2747/2747 | loss 0.6189 acc 0.6889 | 3.6 img/s | eta 0.0m | gpu_mem 4.40GB
+2026-02-25 00:22:57 | INFO | epoch 1 training finished in 70.3 min
+2026-02-25 00:23:43 | INFO | epoch 1/3 summary | train loss 0.6189 acc 0.6889 | val loss 0.6762 acc 0.7146
+2026-02-25 00:23:43 | INFO | saved new best checkpoint (val_acc=0.7146)
+2026-02-25 00:26:15 | INFO | epoch 2/3 | batch 100/2747 | loss 0.3904 acc 0.7955 | 168.6 img/s | eta 67.0m | gpu_mem 3.18GB
+2026-02-25 00:28:42 | INFO | epoch 2/3 | batch 200/2747 | loss 0.3894 acc 0.7955 | 173.9 img/s | eta 62.5m | gpu_mem 3.18GB
+2026-02-25 00:31:10 | INFO | epoch 2/3 | batch 300/2747 | loss 0.3880 acc 0.7969 | 174.0 img/s | eta 60.0m | gpu_mem 3.18GB
+2026-02-25 00:33:37 | INFO | epoch 2/3 | batch 400/2747 | loss 0.3893 acc 0.7970 | 173.9 img/s | eta 57.6m | gpu_mem 3.18GB
+2026-02-25 00:36:04 | INFO | epoch 2/3 | batch 500/2747 | loss 0.3858 acc 0.7975 | 173.9 img/s | eta 55.1m | gpu_mem 3.18GB
+2026-02-25 00:38:30 | INFO | epoch 2/3 | batch 600/2747 | loss 0.3838 acc 0.7988 | 174.7 img/s | eta 52.4m | gpu_mem 3.18GB
+2026-02-25 00:40:56 | INFO | epoch 2/3 | batch 700/2747 | loss 0.3813 acc 0.8006 | 175.9 img/s | eta 49.7m | gpu_mem 3.18GB
+2026-02-25 00:43:22 | INFO | epoch 2/3 | batch 800/2747 | loss 0.3790 acc 0.8014 | 175.9 img/s | eta 47.2m | gpu_mem 3.18GB
+2026-02-25 00:45:47 | INFO | epoch 2/3 | batch 900/2747 | loss 0.3755 acc 0.8027 | 176.0 img/s | eta 44.8m | gpu_mem 3.18GB
+2026-02-25 00:48:12 | INFO | epoch 2/3 | batch 1000/2747 | loss 0.3736 acc 0.8040 | 176.0 img/s | eta 42.3m | gpu_mem 3.18GB
+2026-02-25 00:50:38 | INFO | epoch 2/3 | batch 1100/2747 | loss 0.3701 acc 0.8054 | 176.0 img/s | eta 39.9m | gpu_mem 3.18GB
+2026-02-25 00:53:03 | INFO | epoch 2/3 | batch 1200/2747 | loss 0.3675 acc 0.8064 | 175.9 img/s | eta 37.5m | gpu_mem 3.18GB
+2026-02-25 00:55:29 | INFO | epoch 2/3 | batch 1300/2747 | loss 0.3644 acc 0.8077 | 176.0 img/s | eta 35.1m | gpu_mem 3.18GB
+2026-02-25 00:57:54 | INFO | epoch 2/3 | batch 1400/2747 | loss 0.3615 acc 0.8089 | 176.0 img/s | eta 32.7m | gpu_mem 3.18GB
+2026-02-25 01:00:20 | INFO | epoch 2/3 | batch 1500/2747 | loss 0.3590 acc 0.8101 | 176.0 img/s | eta 30.2m | gpu_mem 3.18GB
+2026-02-25 01:02:45 | INFO | epoch 2/3 | batch 1600/2747 | loss 0.3562 acc 0.8111 | 175.9 img/s | eta 27.8m | gpu_mem 3.18GB
+2026-02-25 01:05:11 | INFO | epoch 2/3 | batch 1700/2747 | loss 0.3529 acc 0.8125 | 175.9 img/s | eta 25.4m | gpu_mem 3.18GB
+2026-02-25 01:07:36 | INFO | epoch 2/3 | batch 1800/2747 | loss 0.3501 acc 0.8138 | 175.9 img/s | eta 23.0m | gpu_mem 3.18GB
+2026-02-25 01:10:02 | INFO | epoch 2/3 | batch 1900/2747 | loss 0.3480 acc 0.8149 | 176.0 img/s | eta 20.5m | gpu_mem 3.18GB
+2026-02-25 01:12:27 | INFO | epoch 2/3 | batch 2000/2747 | loss 0.3458 acc 0.8158 | 176.0 img/s | eta 18.1m | gpu_mem 3.18GB
+2026-02-25 01:14:53 | INFO | epoch 2/3 | batch 2100/2747 | loss 0.3442 acc 0.8164 | 175.9 img/s | eta 15.7m | gpu_mem 3.18GB
+2026-02-25 01:17:18 | INFO | epoch 2/3 | batch 2200/2747 | loss 0.3424 acc 0.8171 | 175.9 img/s | eta 13.3m | gpu_mem 3.18GB
+2026-02-25 01:19:44 | INFO | epoch 2/3 | batch 2300/2747 | loss 0.3411 acc 0.8178 | 176.1 img/s | eta 10.8m | gpu_mem 3.18GB
+2026-02-25 01:22:09 | INFO | epoch 2/3 | batch 2400/2747 | loss 0.3392 acc 0.8188 | 176.0 img/s | eta 8.4m | gpu_mem 3.18GB
+2026-02-25 01:24:35 | INFO | epoch 2/3 | batch 2500/2747 | loss 0.3377 acc 0.8195 | 176.0 img/s | eta 6.0m | gpu_mem 3.18GB
+2026-02-25 01:27:00 | INFO | epoch 2/3 | batch 2600/2747 | loss 0.3358 acc 0.8203 | 175.9 img/s | eta 3.6m | gpu_mem 3.18GB
+2026-02-25 01:29:26 | INFO | epoch 2/3 | batch 2700/2747 | loss 0.3338 acc 0.8211 | 176.0 img/s | eta 1.1m | gpu_mem 3.18GB
+2026-02-25 01:30:34 | INFO | epoch 2/3 | batch 2747/2747 | loss 0.3329 acc 0.8215 | 3.7 img/s | eta 0.0m | gpu_mem 3.18GB
+2026-02-25 01:30:34 | INFO | epoch 2 training finished in 66.8 min
+2026-02-25 01:30:53 | INFO | epoch 2/3 summary | train loss 0.3329 acc 0.8215 | val loss 0.5641 acc 0.7631
+2026-02-25 01:30:53 | INFO | saved new best checkpoint (val_acc=0.7631)
+2026-02-25 01:33:21 | INFO | epoch 3/3 | batch 100/2747 | loss 0.2650 acc 0.8476 | 172.8 img/s | eta 65.4m | gpu_mem 3.18GB
+2026-02-25 01:35:46 | INFO | epoch 3/3 | batch 200/2747 | loss 0.2692 acc 0.8467 | 175.9 img/s | eta 61.8m | gpu_mem 3.18GB
+2026-02-25 01:38:12 | INFO | epoch 3/3 | batch 300/2747 | loss 0.2713 acc 0.8459 | 176.1 img/s | eta 59.3m | gpu_mem 3.18GB
+2026-02-25 01:40:37 | INFO | epoch 3/3 | batch 400/2747 | loss 0.2688 acc 0.8487 | 176.0 img/s | eta 56.9m | gpu_mem 3.18GB
+2026-02-25 01:43:03 | INFO | epoch 3/3 | batch 500/2747 | loss 0.2673 acc 0.8491 | 176.0 img/s | eta 54.5m | gpu_mem 3.18GB
+2026-02-25 01:45:28 | INFO | epoch 3/3 | batch 600/2747 | loss 0.2683 acc 0.8485 | 176.0 img/s | eta 52.1m | gpu_mem 3.18GB
+2026-02-25 01:47:54 | INFO | epoch 3/3 | batch 700/2747 | loss 0.2653 acc 0.8496 | 176.0 img/s | eta 49.6m | gpu_mem 3.18GB
+2026-02-25 01:50:19 | INFO | epoch 3/3 | batch 800/2747 | loss 0.2651 acc 0.8506 | 176.0 img/s | eta 47.2m | gpu_mem 3.18GB
+2026-02-25 01:52:45 | INFO | epoch 3/3 | batch 900/2747 | loss 0.2657 acc 0.8503 | 175.9 img/s | eta 44.8m | gpu_mem 3.18GB
+2026-02-25 01:55:10 | INFO | epoch 3/3 | batch 1000/2747 | loss 0.2647 acc 0.8510 | 175.9 img/s | eta 42.4m | gpu_mem 3.18GB
+2026-02-25 01:57:36 | INFO | epoch 3/3 | batch 1100/2747 | loss 0.2638 acc 0.8516 | 175.9 img/s | eta 39.9m | gpu_mem 3.18GB
+2026-02-25 02:00:01 | INFO | epoch 3/3 | batch 1200/2747 | loss 0.2631 acc 0.8518 | 176.0 img/s | eta 37.5m | gpu_mem 3.18GB
+2026-02-25 02:02:27 | INFO | epoch 3/3 | batch 1300/2747 | loss 0.2611 acc 0.8526 | 175.9 img/s | eta 35.1m | gpu_mem 3.18GB
+2026-02-25 02:04:52 | INFO | epoch 3/3 | batch 1400/2747 | loss 0.2595 acc 0.8534 | 176.0 img/s | eta 32.7m | gpu_mem 3.18GB
+2026-02-25 02:07:18 | INFO | epoch 3/3 | batch 1500/2747 | loss 0.2587 acc 0.8536 | 175.9 img/s | eta 30.2m | gpu_mem 3.18GB
+2026-02-25 02:09:43 | INFO | epoch 3/3 | batch 1600/2747 | loss 0.2572 acc 0.8543 | 176.0 img/s | eta 27.8m | gpu_mem 3.18GB
+2026-02-25 02:12:09 | INFO | epoch 3/3 | batch 1700/2747 | loss 0.2559 acc 0.8548 | 176.0 img/s | eta 25.4m | gpu_mem 3.18GB
+2026-02-25 02:14:34 | INFO | epoch 3/3 | batch 1800/2747 | loss 0.2550 acc 0.8551 | 175.9 img/s | eta 23.0m | gpu_mem 3.18GB
+2026-02-25 02:16:59 | INFO | epoch 3/3 | batch 1900/2747 | loss 0.2535 acc 0.8556 | 176.0 img/s | eta 20.5m | gpu_mem 3.18GB
+2026-02-25 02:19:25 | INFO | epoch 3/3 | batch 2000/2747 | loss 0.2529 acc 0.8558 | 176.0 img/s | eta 18.1m | gpu_mem 3.18GB
+2026-02-25 02:21:50 | INFO | epoch 3/3 | batch 2100/2747 | loss 0.2521 acc 0.8562 | 176.0 img/s | eta 15.7m | gpu_mem 3.18GB
+2026-02-25 02:24:16 | INFO | epoch 3/3 | batch 2200/2747 | loss 0.2504 acc 0.8570 | 175.9 img/s | eta 13.3m | gpu_mem 3.18GB
+2026-02-25 02:26:41 | INFO | epoch 3/3 | batch 2300/2747 | loss 0.2493 acc 0.8576 | 176.0 img/s | eta 10.8m | gpu_mem 3.18GB
+2026-02-25 02:29:07 | INFO | epoch 3/3 | batch 2400/2747 | loss 0.2484 acc 0.8578 | 176.1 img/s | eta 8.4m | gpu_mem 3.18GB
+2026-02-25 02:31:32 | INFO | epoch 3/3 | batch 2500/2747 | loss 0.2473 acc 0.8585 | 176.0 img/s | eta 6.0m | gpu_mem 3.18GB
+2026-02-25 02:33:58 | INFO | epoch 3/3 | batch 2600/2747 | loss 0.2464 acc 0.8588 | 176.1 img/s | eta 3.6m | gpu_mem 3.18GB
+2026-02-25 02:36:23 | INFO | epoch 3/3 | batch 2700/2747 | loss 0.2456 acc 0.8593 | 175.9 img/s | eta 1.1m | gpu_mem 3.18GB
+2026-02-25 02:37:32 | INFO | epoch 3/3 | batch 2747/2747 | loss 0.2450 acc 0.8595 | 3.7 img/s | eta 0.0m | gpu_mem 3.18GB
+2026-02-25 02:37:32 | INFO | epoch 3 training finished in 66.6 min
+2026-02-25 02:37:39 | INFO | epoch 3/3 summary | train loss 0.2450 acc 0.8595 | val loss 0.4137 acc 0.8173
+2026-02-25 02:37:39 | INFO | saved new best checkpoint (val_acc=0.8173)
+2026-02-25 02:38:53 | INFO | final | best val acc 0.8173 | test loss 0.4304 acc 0.8192
+2026-02-25 02:38:53 | INFO | training completed in 206.2 min
