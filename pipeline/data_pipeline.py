@@ -32,9 +32,12 @@ except ImportError:
     _speed_provider = None
 
 try:
-    from video_processor import get_surface as _surface_provider  # type: ignore
+    from pipeline.video_processor import get_surface as _surface_provider  # type: ignore
 except ImportError:
-    _surface_provider = None
+    try:
+        from video_processor import get_surface as _surface_provider  # type: ignore
+    except ImportError:
+        _surface_provider = None
 
 
 def _normalize_weather(raw: dict[str, Any]) -> dict[str, Any]:
@@ -136,17 +139,50 @@ class RoadDataPipeline:
         while self._surface_history and self._surface_history[0][0] < min_ts:
             self._surface_history.popleft()
 
+    def _apply_heuristics(self, raw: dict[str, dict[str, float]]) -> None:
+        """Modifies raw scores in-place based on weather and speed limits."""
+        temp = self.last_weather.get("temp")
+        humidity = self.last_weather.get("humidity")
+        precipitation = self.last_weather.get("precipitation")
+        speed_limit = self.last_speed.get("fartsgrense")
+
+        if temp is not None:
+            # Rule 1: No ice or fresh snow if it's warm
+            if temp >= 7.0 and "ice" in raw.get("winter", {}):
+                raw["winter"]["ice"] = 0.0
+            
+            # Rule 2: No fresh snow if it's warm
+            if temp >= 5.0 and "fresh_snow" in raw.get("winter", {}):
+                raw["winter"]["fresh_snow"] = 0.0
+            
+            # Rule 3: Boost ice likelihood if it's freezing
+            if temp < 2.0 and ((humidity is not None and humidity > 70) or precipitation >= 0.5):
+                if raw.get("winter", {}).get("ice", 0.0) > 0.05: 
+                    raw["winter"]["ice"] *= 1.5
+            elif temp < 2.0 and temp > -2.0:
+                if raw.get("winter", {}).get("ice", 0.0) > 0.05: 
+                    raw["winter"]["ice"] *= 1.5
+
+        if speed_limit is not None:
+            # Rule 4: High speed limits (highway) are almost never gravel or mud
+            if isinstance(speed_limit, (int, float)) and speed_limit >= 80:
+                if "gravel" in raw.get("surface", {}):
+                    raw["surface"]["gravel"] *= 0.1
+                if "mud" in raw.get("surface", {}):
+                    raw["surface"]["mud"] *= 0.1
+
     def _average_surface(self, now: float) -> Optional[dict[str, Any]]:
         self._trim_surface_history(now)
         if not self._surface_history:
             return None
 
         n = len(self._surface_history)
-        groups = {"friction": {}, "surface": {}, "uneven": {}, "winter": {}, "raw_top": {}}
+        groups = {"friction": {}, "surface": {}, "uneven": {}, "winter": {}}
 
         for _, sample in self._surface_history:
+            raw_scores = sample.get("raw_scores", {})
             for key in groups:
-                score_map = _as_score_map(sample.get(key, {}))
+                score_map = _as_score_map(raw_scores.get(key, {}))
                 for label, value in score_map.items():
                     groups[key][label] = groups[key].get(label, 0.0) + value
 
@@ -154,15 +190,18 @@ class RoadDataPipeline:
             for label in list(groups[key].keys()):
                 groups[key][label] /= n
 
+        # Apply heuristics!
+        self._apply_heuristics(groups)
+
         out = {
             "status": "ok",
             "samples_in_window": n,
             "window_seconds": self.surface_window_s,
-            "friction": _topk(groups["friction"]),
-            "surface": _topk(groups["surface"]),
-            "uneven": _topk(groups["uneven"]),
-            "winter": _topk(groups["winter"]),
-            "raw_top": _topk(groups["raw_top"], k=5),
+            "friction": _topk(groups["friction"], k=1)[0] if groups["friction"] else None,
+            "surface": _topk(groups["surface"], k=1)[0] if groups["surface"] else None,
+            "uneven": _topk(groups["uneven"], k=1)[0] if groups["uneven"] else None,
+            "winter": _topk(groups["winter"], k=1)[0] if groups["winter"] else None,
+            "raw_scores": groups,
         }
 
         # Preserve optional provider metadata from latest sample.
