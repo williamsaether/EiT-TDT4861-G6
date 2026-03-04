@@ -1,5 +1,5 @@
 .idea
-data
+/camera_model/data
 
 # CACHE
 __pycache__
