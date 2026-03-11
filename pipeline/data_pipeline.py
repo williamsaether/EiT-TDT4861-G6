@@ -17,10 +17,6 @@ from typing import Any, Callable, Optional
 import time
 
 
-# ---------------------------------------------------------------------------
-# Provider imports (thin adapters only)
-# ---------------------------------------------------------------------------
-
 try:
     from weather.weather_met import get_weather_data as _weather_provider  # type: ignore
 except ImportError:
@@ -328,5 +324,5 @@ def collect_pipeline_input(
 if __name__ == "__main__":
     import json
 
-    result = collect_pipeline_input(lat=63.4305, lon=10.3951, altitude=20)
+    result = collect_pipeline_input(lat=63.395869, lon=10.391163, altitude=20)
     print(json.dumps(result, indent=2, ensure_ascii=False))
