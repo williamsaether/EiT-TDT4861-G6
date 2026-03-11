@@ -1,0 +1,112 @@
+[
+    {
+        "video": "v01.mp4",
+        "difficulty": "easy",
+        "lat": 59.821306,
+        "lon": 6.745856,
+        "altitude": 752,
+        "speedlimit": 60,
+        "temp": -2.5,
+        "humidity": 82.0,
+        "precipitation": 0.0
+    },
+    {
+        "video": "v02.mp4",
+        "difficulty": "easy",
+        "lat": 63.015744,
+        "lon": 7.459939,
+        "altitude": 17,
+        "speedlimit": 60,
+        "temp": 0.8,
+        "humidity": 88.0,
+        "precipitation": 0.0
+    },
+    {
+        "video": "v03.mp4",
+        "difficulty": "easy",
+        "lat": 68.482844,
+        "lon": 17.532460,
+        "altitude": 30,
+        "speedlimit": 80,
+        "temp": -3.8,
+        "humidity": 91.0,
+        "precipitation": 0.3
+    },
+    {
+        "video": "v04.mp4",
+        "difficulty": "hard",
+        "lat": 59.929372,
+        "lon": 10.864909,
+        "altitude": 126,
+        "speedlimit": 80, 
+        "temp": -5.2,
+        "humidity": 97.0,
+        "precipitation": 3.8
+    },
+    {
+        "video": "v05.mp4",
+        "difficulty": "hard",
+        "lat": 66.506646,
+        "lon": 14.980514,
+        "altitude": 248,
+        "speedlimit": 90,
+        "temp": -7.0,
+        "humidity": 98.0,
+        "precipitation": 6.2
+    },
+    {
+        "video": "v06.mp4",
+        "difficulty": "hard",
+        "lat": 66.543471,
+        "lon": 15.310017,
+        "altitude": 659,
+        "speedlimit": 70,
+        "temp": -9.5,
+        "humidity": 99.0,
+        "precipitation": 8.0
+    },
+    {
+        "video": "v07.mp4",
+        "difficulty": "medium",
+        "lat": 61.203316,
+        "lon": 5.809820,
+        "altitude": 59,
+        "speedlimit": 80,
+        "temp": -1.2,
+        "humidity": 90.0,
+        "precipitation": 0.4
+    },
+    {
+        "video": "v08.mp4",
+        "difficulty": "medium",
+        "lat": 61.765631,
+        "lon": 6.8321211,
+        "altitude": 37,
+        "speedlimit": 80,
+        "temp": -2.5,
+        "humidity": 80.0,
+        "precipitation": 0.0
+    },
+    {
+        "video": "v09.mp4",
+        "difficulty": "medium",
+        "lat": 70.623754,
+        "lon": 24.696124,
+        "altitude": 13,
+        "speedlimit": 80,
+        "temp": -4.0,
+        "humidity": 95.0,
+        "precipitation": 1.8
+    },
+    {
+        "video": "v10.mp4",
+        "difficulty": "medium",
+        "lat": 70.758382,
+        "lon": 24.539699,
+        "altitude": 21,
+        "speedlimit": 70,
+        "temp": -4.5,
+        "humidity": 96.0,
+        "precipitation": 2.6
+    }
+]
