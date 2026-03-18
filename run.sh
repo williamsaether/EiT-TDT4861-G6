@@ -2,6 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_BIN="$(command -v python3 || command -v python)"
 
 echo "Installing Python dependencies..."
 pip install -r "$SCRIPT_DIR/app/requirements.txt"
