@@ -41,7 +41,7 @@
         "speedlimit": 80,
         "temp": -5.2,
         "humidity": 97.0,
-        "precipitation": 3.8
+        "precipitation": 12.0
     },
     {
         "video": "v05.mp4",
@@ -52,7 +52,7 @@
         "speedlimit": 90,
         "temp": -7.0,
         "humidity": 98.0,
-        "precipitation": 6.2
+        "precipitation": 12.2
     },
     {
         "video": "v06.mp4",
@@ -63,7 +63,7 @@
         "speedlimit": 70,
         "temp": -9.5,
         "humidity": 99.0,
-        "precipitation": 8.0
+        "precipitation": 12.0
     },
     {
         "video": "v07.mp4",
@@ -74,7 +74,7 @@
         "speedlimit": 80,
         "temp": -1.2,
         "humidity": 90.0,
-        "precipitation": 0.4
+        "precipitation": 2.1
     },
     {
         "video": "v08.mp4",
@@ -96,7 +96,7 @@
         "speedlimit": 80,
         "temp": -4.0,
         "humidity": 95.0,
-        "precipitation": 1.8
+        "precipitation": 7.8
     },
     {
         "video": "v10.mp4",
@@ -107,6 +107,6 @@
         "speedlimit": 70,
         "temp": -4.5,
         "humidity": 96.0,
-        "precipitation": 2.6
+        "precipitation": 5.6
     }
 ]
