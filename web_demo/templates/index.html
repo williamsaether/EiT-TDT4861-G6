@@ -1,203 +1,495 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Road Condition Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speed Limit Tuning Dashboard</title>
   <link rel="stylesheet" href="/static/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <main class="page">
-    <header class="header">
-      <h1>Road Condition Controller</h1>
-      <p>Live fusion of weather, legal speed limit, and camera model outputs (v2 model — 12 classes).</p>
-    </header>
 
-    <section class="layout">
-      <!-- LEFT: Controls -->
-      <div class="card controls-card">
-        <h2>Controller Settings</h2>
+<!-- ═══════════════════════════════════════════════════════════════ MASTER VIEW -->
+<div id="master-view" class="view active">
 
-        <div class="field">
-          <label for="videoInput">Demo Video Source</label>
-          <input id="videoInput" type="file" accept="video/*" />
-          <button id="uploadBtn">Upload Video</button>
-          <p id="uploadStatus" class="muted">No video uploaded.</p>
-        </div>
-
-        <div class="field row-4">
-          <label>
-            Latitude
-            <input id="latInput" type="number" value="63.4305" step="0.0001" />
-          </label>
-          <label>
-            Longitude
-            <input id="lonInput" type="number" value="10.3951" step="0.0001" />
-          </label>
-          <label>
-            Altitude (m)
-            <input id="altInput" type="number" value="20" step="1" />
-          </label>
-          <label>
-            Custom Max Speed (km/h)
-            <input id="maxSpeedInput" type="number" min="1" step="1" placeholder="Empty = API limit" />
-          </label>
-        </div>
-
-        <!-- Weight tuning panel -->
-        <div class="field weight-panel">
-          <h3>Fusion Weights</h3>
-          <p class="muted">
-            <strong>Weather</strong> &amp; <strong>Camera</strong> are additive blend weights
-            (normalized to sum to 1). <strong>Conf. Sensitivity</strong> controls how much low
-            model confidence damps the camera reading toward a safe neutral — set to 0 to always
-            trust the raw camera factor regardless of confidence.
-          </p>
-
-          <div class="slider-grid">
-            <label class="slider-row">
-              <span class="slider-name">Weather</span>
-              <input id="weightWeather" type="range" value="45" min="0" max="100" step="1" />
-              <span id="weightWeatherValue" class="slider-value">45</span>
-            </label>
-            <label class="slider-row">
-              <span class="slider-name">Camera</span>
-              <input id="weightCamera" type="range" value="45" min="0" max="100" step="1" />
-              <span id="weightCameraValue" class="slider-value">45</span>
-            </label>
-            <label class="slider-row">
-              <span class="slider-name">Conf. Sensitivity</span>
-              <input id="weightConfidence" type="range" value="10" min="0" max="100" step="1" />
-              <span id="weightConfidenceValue" class="slider-value">10</span>
-            </label>
-          </div>
-
-          <p id="weightsPreview" class="preview"></p>
-          <p id="weightsStatus" class="muted"></p>
-        </div>
-
-        <!-- Camera window tuning -->
-        <div class="field weight-panel">
-          <h3>Camera Averaging Window</h3>
-          <p class="muted">
-            Predictions from the last <strong id="windowSecondsLabel">3.0</strong> s are averaged
-            before computing the camera factor. A longer window smooths jitter but reacts
-            more slowly to sudden surface changes.
-          </p>
-          <div class="slider-grid">
-            <label class="slider-row">
-              <span class="slider-name">Window (s)</span>
-              <input id="cameraWindowSlider" type="range" value="3" min="0.5" max="10" step="0.5" />
-              <span id="cameraWindowValue" class="slider-value">3.0</span>
-            </label>
-          </div>
-          <p id="windowFrameCount" class="muted"></p>
-        </div>
-
-        <div class="field actions">
-          <button id="startBtn">Start Pipeline</button>
-          <button id="stopBtn">Stop Pipeline</button>
-          <button id="resetHistogramBtn" class="ghost">Reset Distributions</button>
-        </div>
-
-        <div class="field">
-          <h3>Uploaded Video Preview</h3>
-          <video id="videoPreview" controls muted playsinline></video>
-        </div>
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1>Speed Limit Tuning</h1>
+      <span class="subtitle">Tune the model to match human survey targets</span>
+    </div>
+    <div class="topbar-right">
+      <div id="analyzer-badge" class="badge badge-processing">
+        <span class="dot"></span> Processing videos…
       </div>
+      <div class="score-chip">
+        <span id="score-label">0 / 10</span>
+        <span class="score-sub">videos match</span>
+      </div>
+    </div>
+  </header>
 
-      <!-- RIGHT: Live output -->
-      <div class="card output-card">
-        <h2>Live Output</h2>
+  <!-- Tuning panels -->
+  <div class="tuning-row">
 
-        <!-- Speed summary row -->
-        <div class="status-grid">
-          <div class="stat-box">
-            <p class="label">Controller</p>
-            <p id="runState" class="value">stopped</p>
-          </div>
-          <div class="stat-box">
-            <p class="label">Model</p>
-            <p id="modelState" class="value">loading</p>
-          </div>
-          <div class="stat-box">
-            <p class="label">API Speed Limit</p>
-            <p id="legalSpeed" class="value">-</p>
-          </div>
-          <div class="stat-box">
-            <p class="label">Custom Max</p>
-            <p id="userMaxSpeed" class="value">-</p>
-          </div>
-          <div class="stat-box accent">
-            <p class="label">Recommended</p>
-            <p id="recommendedSpeed" class="value large">-</p>
+    <!-- Weights panel -->
+    <section class="panel" id="weights-panel">
+      <div class="panel-header">
+        <h2>Blend Weights</h2>
+        <span class="panel-hint">How much each signal influences the recommendation</span>
+      </div>
+      <div class="sliders-col">
+        <div class="slider-row">
+          <label>
+            <span class="slider-name">Camera</span>
+            <span class="slider-desc">Road surface classification</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="w_camera" min="0" max="100" step="1" value="60" />
+            <span class="slider-val" id="w_camera_val">60</span>
           </div>
         </div>
-
-        <div class="reason-block">
-          <p class="label">Recommendation Reason</p>
-          <p id="recommendationReason">Waiting for data...</p>
-        </div>
-
-        <!-- Factor breakdown: per-factor speeds + donut chart -->
-        <h3>Factor Breakdown</h3>
-        <div class="factor-layout">
-          <div class="factor-speeds">
-            <div class="factor-box weather-box">
-              <p class="label">If Weather Only</p>
-              <p id="weatherOnlySpeed" class="value">-</p>
-              <p id="weatherFactor" class="factor-detail">factor: -</p>
-            </div>
-            <div class="factor-box camera-box">
-              <p class="label">If Camera Only</p>
-              <p id="cameraOnlySpeed" class="value">-</p>
-              <p id="cameraFactor" class="factor-detail">factor: -</p>
-            </div>
-            <div class="factor-box combined-box">
-              <p class="label">Combined (actual)</p>
-              <p id="combinedFactor" class="value">-</p>
-              <p id="combinedLabel" class="factor-detail">combined factor</p>
-            </div>
-          </div>
-          <div class="factor-chart-wrap">
-            <p class="label chart-title">Speed Reduction Contribution (km/h)</p>
-            <canvas id="factorDonut" width="200" height="200"></canvas>
-            <p id="factorChartLegend" class="chart-legend"></p>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name">Weather</span>
+            <span class="slider-desc">Wind, rain, temperature, visibility</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="w_weather" min="0" max="100" step="1" value="30" />
+            <span class="slider-val" id="w_weather_val">30</span>
           </div>
         </div>
-
-        <!-- Probability distribution charts -->
-        <h3>Live Accumulated Probability Distribution</h3>
-        <div class="chart-grid">
-          <div class="chart-card">
-            <p class="label">Friction</p>
-            <canvas id="frictionChart" height="160"></canvas>
-          </div>
-          <div class="chart-card">
-            <p class="label">Surface</p>
-            <canvas id="surfaceChart" height="160"></canvas>
-          </div>
-          <div class="chart-card">
-            <p class="label">Winter Conditions</p>
-            <canvas id="winterChart" height="160"></canvas>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name">Confidence</span>
+            <span class="slider-desc">Dampens camera when model is uncertain</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="w_confidence" min="0" max="100" step="1" value="10" />
+            <span class="slider-val" id="w_confidence_val">10</span>
           </div>
         </div>
-
-        <div class="columns">
-          <div>
-            <h3>Top Camera Predictions</h3>
-            <ul id="cameraGroups"></ul>
+        <div class="weight-bar-wrap">
+          <div class="weight-bar" id="weight-bar">
+            <div class="weight-seg seg-camera" id="seg-camera" title="Camera"></div>
+            <div class="weight-seg seg-weather" id="seg-weather" title="Weather"></div>
+            <div class="weight-seg seg-confidence" id="seg-confidence" title="Confidence"></div>
           </div>
-          <div>
-            <h3>Weather + Speed Inputs</h3>
-            <ul id="sourceInfo"></ul>
+          <div class="weight-bar-labels">
+            <span class="wbl-camera">Camera</span>
+            <span class="wbl-weather">Weather</span>
+            <span class="wbl-confidence">Confidence</span>
           </div>
         </div>
       </div>
     </section>
-  </main>
 
-  <script src="/static/app.js"></script>
+    <!-- Difficulty factors panel -->
+    <section class="panel" id="factors-panel">
+      <div class="panel-header">
+        <h2>Difficulty Factors</h2>
+        <span class="panel-hint">Speed reduction multiplier per road surface level</span>
+      </div>
+      <div class="sliders-col">
+        <div class="slider-row">
+          <label>
+            <span class="slider-name lvl lvl-1">Level 1</span>
+            <span class="slider-desc">Dry asphalt</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="df_1" min="0.05" max="1.0" step="0.01" value="1.0" />
+            <span class="slider-val" id="df_1_val">1.00</span>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name lvl lvl-2">Level 2</span>
+            <span class="slider-desc">Wet asphalt</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="df_2" min="0.05" max="1.0" step="0.01" value="0.90" />
+            <span class="slider-val" id="df_2_val">0.90</span>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name lvl lvl-3">Level 3</span>
+            <span class="slider-desc">Melted snow / water asphalt</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="df_3" min="0.05" max="1.0" step="0.01" value="0.70" />
+            <span class="slider-val" id="df_3_val">0.70</span>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name lvl lvl-4">Level 4</span>
+            <span class="slider-desc">Fresh snow</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="df_4" min="0.05" max="1.0" step="0.01" value="0.50" />
+            <span class="slider-val" id="df_4_val">0.50</span>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name lvl lvl-5">Level 5</span>
+            <span class="slider-desc">Ice</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="df_5" min="0.05" max="1.0" step="0.01" value="0.35" />
+            <span class="slider-val" id="df_5_val">0.35</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Weather factors panel -->
+    <section class="panel" id="weather-factors-panel">
+      <div class="panel-header">
+        <h2>Weather Factors</h2>
+        <span class="panel-hint">Speed reduction multiplier per weather condition</span>
+      </div>
+      <div class="sliders-col">
+        <div class="slider-row">
+          <label>
+            <span class="slider-name wf-label wf-light">Light rain / snow</span>
+            <span class="slider-desc">Precip 0.5 – 5 mm/h</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="wf_light_precip" min="0.50" max="1.00" step="0.01" value="0.85" />
+            <span class="slider-val" id="wf_light_precip_val">0.85</span>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name wf-label wf-mod">Moderate rain / snow</span>
+            <span class="slider-desc">Precip 5 – 10 mm/h</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="wf_mod_precip" min="0.30" max="1.00" step="0.01" value="0.70" />
+            <span class="slider-val" id="wf_mod_precip_val">0.70</span>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name wf-label wf-heavy">Heavy rain / snow</span>
+            <span class="slider-desc">Precip &gt; 10 mm/h</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="wf_heavy_precip" min="0.10" max="0.90" step="0.01" value="0.50" />
+            <span class="slider-val" id="wf_heavy_precip_val">0.50</span>
+          </div>
+        </div>
+        <div class="panel-divider"></div>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name wf-label wf-nearfreeze">Near freezing</span>
+            <span class="slider-desc">Temperature 0 – 3 °C</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="wf_near_freeze" min="0.50" max="1.00" step="0.01" value="0.80" />
+            <span class="slider-val" id="wf_near_freeze_val">0.80</span>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label>
+            <span class="slider-name wf-label wf-freeze">Freezing</span>
+            <span class="slider-desc">Temperature below 0 °C</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="wf_freeze" min="0.10" max="0.90" step="0.01" value="0.60" />
+            <span class="slider-val" id="wf_freeze_val">0.60</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Misc panel -->
+    <section class="panel panel-narrow" id="misc-panel">
+      <div class="panel-header">
+        <h2>Score &amp; Settings</h2>
+        <span class="panel-hint">Per-video weather loaded from metadata.json</span>
+      </div>
+      <div class="sliders-col">
+        <div class="slider-row">
+          <label>
+            <span class="slider-name">Neutral cam factor</span>
+            <span class="slider-desc">Fallback when model is uncertain</span>
+          </label>
+          <div class="slider-control">
+            <input type="range" id="neutral_cam" min="0.1" max="1.0" step="0.01" value="0.88" />
+            <span class="slider-val" id="neutral_cam_val">0.88</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <div class="overall-score-block">
+        <div class="osa-ring-wrap">
+          <svg class="osa-ring" viewBox="0 0 80 80">
+            <circle class="osa-track" cx="40" cy="40" r="34"/>
+            <circle class="osa-fill" id="score-ring-fill" cx="40" cy="40" r="34"
+              stroke-dasharray="213.63" stroke-dashoffset="213.63"/>
+          </svg>
+          <div class="osa-label">
+            <span id="score-num">0</span>
+            <span class="osa-den">/ 10</span>
+          </div>
+        </div>
+        <p class="osa-caption">Videos matching<br/>survey target ±0 km/h</p>
+        <div class="accuracy-breakdown" id="accuracy-breakdown">
+          <span class="acc-exact" id="acc-exact">0 exact</span>
+          <span class="acc-near" id="acc-near">0 within ±10</span>
+          <span class="acc-off" id="acc-off">0 off</span>
+        </div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <div class="smooth-block">
+        <div class="smooth-block-header">
+          <span class="slider-name">Smoothing window</span>
+          <span class="slider-val" id="global_smooth_window_val">3.0s</span>
+        </div>
+        <span class="slider-desc">Frames averaged in live playback</span>
+        <input type="range" id="global_smooth_window" min="0.5" max="10" step="0.5" value="3" />
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <!-- Auto-tune -->
+      <button class="auto-tune-btn" id="auto-tune-btn" onclick="runAutoTune()">
+        <span class="atb-icon">⚡</span>
+        <span class="atb-text">Auto-tune</span>
+        <span class="atb-sub">Optimise all parameters</span>
+      </button>
+
+      <div class="auto-tune-result" id="auto-tune-result" style="display:none">
+        <div class="atr-header">
+          <span class="atr-title">Optimisation result</span>
+          <span class="atr-converged" id="atr-converged"></span>
+        </div>
+        <div class="atr-metric-row">
+          <span class="atr-metric-label">Exact match</span>
+          <span class="atr-metric-before" id="atr-exact-before">—</span>
+          <span class="atr-metric-arrow">→</span>
+          <span class="atr-metric-after" id="atr-exact-after">—</span>
+        </div>
+        <div class="atr-metric-row atr-near-row">
+          <span class="atr-metric-label">Within ±10 km/h</span>
+          <span class="atr-metric-before" id="atr-near-before">—</span>
+          <span class="atr-metric-arrow">→</span>
+          <span class="atr-metric-after atr-near-after" id="atr-near-after">—</span>
+        </div>
+        <div class="atr-metric-row">
+          <span class="atr-metric-label">Iterations</span>
+          <span class="atr-metric-before" id="atr-iters" style="grid-column:span 3">—</span>
+        </div>
+        <div class="atr-video-list" id="atr-video-list"></div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <!-- Model selector -->
+      <div class="model-selector-block">
+        <div class="model-selector-header">
+          <span class="slider-name">Camera model</span>
+          <span class="model-status-badge" id="model-status-badge"></span>
+        </div>
+        <span class="slider-desc">Switch ONNX model — re-runs inference on all videos</span>
+        <div class="model-btn-group" id="model-btn-group">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <!-- Road crop toggle -->
+      <div class="model-selector-block">
+        <div class="model-selector-header">
+          <span class="slider-name">Input crop</span>
+          <span class="model-status-badge" id="crop-status-badge"></span>
+        </div>
+        <span class="slider-desc">Crop to road surface before inference — strips sky, horizon and shoulders</span>
+        <div class="crop-region-hint" id="crop-region-hint"></div>
+        <div class="model-btn-group" id="crop-btn-group">
+          <button class="model-btn model-btn--active" id="crop-btn-full" onclick="setCrop(false)">Full frame</button>
+          <button class="model-btn" id="crop-btn-road" onclick="setCrop(true)">Road crop</button>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /tuning-row -->
+
+  <!-- Video grid -->
+  <section class="video-grid-section">
+    <div class="vg-header">
+      <h2>All 10 Videos</h2>
+      <span class="vg-hint">Click any video to inspect and tune with live playback</span>
+    </div>
+    <div class="video-grid" id="video-grid">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+</div><!-- /master-view -->
+
+
+<!-- ══════════════════════════════════════════════════════════ SINGLE VIDEO VIEW -->
+<div id="video-view" class="view">
+
+  <header class="topbar topbar-video">
+    <button class="back-btn" id="back-btn" onclick="showMaster()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M10.5 3L5.5 8l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      All Videos
+    </button>
+    <div class="video-title-block">
+      <span id="sv-badge" class="difficulty-badge">easy</span>
+      <h2 id="sv-title">v01</h2>
+      <span id="sv-posted" class="sv-meta">Posted: 80 km/h</span>
+      <span id="sv-responses" class="sv-meta">42 responses</span>
+    </div>
+    <div class="topbar-right">
+      <div class="target-chip">
+        <span class="tc-label">Survey target</span>
+        <span class="tc-val" id="sv-target">70</span>
+        <span class="tc-unit">km/h</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="sv-layout">
+
+    <!-- Left: video player -->
+    <div class="sv-player-col">
+      <div class="video-wrap">
+        <video id="main-video" controls preload="metadata">
+          Your browser does not support video.
+        </video>
+      </div>
+      <div class="frame-timeline" id="frame-timeline">
+        <!-- Colored tick marks for frame predictions -->
+      </div>
+      <div class="sv-class-bars" id="sv-class-bars">
+        <div class="scb-header">All 12 classes — current frame</div>
+        <div class="scb-list" id="scb-list">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: live prediction + sliders -->
+    <div class="sv-info-col">
+
+      <div class="sv-prediction-card" id="sv-pred-card">
+        <div class="spc-top-label" id="spc-top-label">—</div>
+        <div class="spc-confidence">
+          <span class="spc-conf-val" id="spc-conf-val">—</span>
+          <span class="spc-conf-label">confidence</span>
+        </div>
+        <div class="spc-factors">
+          <div class="spc-factor-row">
+            <span>Camera factor</span>
+            <span id="spc-cam-factor" class="factor-val">—</span>
+          </div>
+          <div class="spc-factor-row">
+            <span>Weather factor</span>
+            <span id="spc-wea-factor" class="factor-val">—</span>
+          </div>
+          <div class="spc-factor-row spc-combined-row">
+            <span>Combined</span>
+            <span id="spc-combined" class="factor-val factor-combined">—</span>
+          </div>
+        </div>
+        <div class="spc-comparison">
+          <div class="spc-speed-box spc-target-box">
+            <span class="spcb-label">Target</span>
+            <span class="spcb-val" id="spcb-target">—</span>
+            <span class="spcb-unit">km/h</span>
+          </div>
+          <div class="spc-arrow">→</div>
+          <div class="spc-speed-box spc-model-box" id="spc-model-box">
+            <span class="spcb-label">Model</span>
+            <span class="spcb-val" id="spcb-model">—</span>
+            <span class="spcb-unit">km/h</span>
+          </div>
+          <div class="spc-match-icon" id="spc-match-icon"></div>
+        </div>
+        <div class="spc-delta-bar-wrap">
+          <div class="spc-delta-bar" id="spc-delta-bar"></div>
+          <span class="spc-delta-label" id="spc-delta-label"></span>
+        </div>
+      </div>
+
+      <!-- Inline sliders (synced with master) -->
+      <div class="sv-sliders">
+        <div class="sv-sliders-header">Tune weights (synced with dashboard)</div>
+        <div class="sv-slider-row">
+          <span class="svsr-name">Camera</span>
+          <input type="range" class="sv-range" id="sv_w_camera" min="0" max="100" step="1" value="60" />
+          <span class="svsr-val" id="sv_w_camera_val">60</span>
+        </div>
+        <div class="sv-slider-row">
+          <span class="svsr-name">Weather</span>
+          <input type="range" class="sv-range" id="sv_w_weather" min="0" max="100" step="1" value="30" />
+          <span class="svsr-val" id="sv_w_weather_val">30</span>
+        </div>
+        <div class="sv-slider-row">
+          <span class="svsr-name">Confidence</span>
+          <input type="range" class="sv-range" id="sv_w_confidence" min="0" max="100" step="1" value="10" />
+          <span class="svsr-val" id="sv_w_confidence_val">10</span>
+        </div>
+        <div class="sv-sliders-header" style="margin-top:12px">Difficulty factors</div>
+        <div class="sv-slider-row">
+          <span class="svsr-name lvl lvl-1">L1</span>
+          <input type="range" class="sv-range" id="sv_df_1" min="0.05" max="1.0" step="0.01" value="1.0" />
+          <span class="svsr-val" id="sv_df_1_val">1.00</span>
+        </div>
+        <div class="sv-slider-row">
+          <span class="svsr-name lvl lvl-2">L2</span>
+          <input type="range" class="sv-range" id="sv_df_2" min="0.05" max="1.0" step="0.01" value="0.90" />
+          <span class="svsr-val" id="sv_df_2_val">0.90</span>
+        </div>
+        <div class="sv-slider-row">
+          <span class="svsr-name lvl lvl-3">L3</span>
+          <input type="range" class="sv-range" id="sv_df_3" min="0.05" max="1.0" step="0.01" value="0.70" />
+          <span class="svsr-val" id="sv_df_3_val">0.70</span>
+        </div>
+        <div class="sv-slider-row">
+          <span class="svsr-name lvl lvl-4">L4</span>
+          <input type="range" class="sv-range" id="sv_df_4" min="0.05" max="1.0" step="0.01" value="0.50" />
+          <span class="svsr-val" id="sv_df_4_val">0.50</span>
+        </div>
+        <div class="sv-slider-row">
+          <span class="svsr-name lvl lvl-5">L5</span>
+          <input type="range" class="sv-range" id="sv_df_5" min="0.05" max="1.0" step="0.01" value="0.35" />
+          <span class="svsr-val" id="sv_df_5_val">0.35</span>
+        </div>
+        <div class="sv-sliders-header" style="margin-top:12px">Temporal smoothing</div>
+        <div class="sv-slider-row">
+          <span class="svsr-name">Window</span>
+          <input type="range" class="sv-range" id="sv_smooth_window" min="0.5" max="10" step="0.5" value="3" />
+          <span class="svsr-val" id="sv_smooth_window_val">3.0s</span>
+        </div>
+        <div class="smooth-frame-badge" id="smooth-frame-count">— frames averaged</div>
+
+        <div class="sv-sliders-header" style="margin-top:12px">Video Weather (from metadata)</div>
+        <div class="sv-weather-info" id="sv-weather-info">
+          <div class="svwi-row"><span class="svwi-label">🌡 Temperature</span><span class="svwi-val" id="svwi-temp">—</span></div>
+          <div class="svwi-row"><span class="svwi-label">🌧 Precipitation</span><span class="svwi-val" id="svwi-precip">—</span></div>
+          <div class="svwi-row"><span class="svwi-label">💧 Humidity</span><span class="svwi-val" id="svwi-humidity">—</span></div>
+          <div class="svwi-row svwi-factor-row"><span class="svwi-label">⚡ Weather factor</span><span class="svwi-val svwi-factor" id="svwi-factor">—</span></div>
+          <div class="svwi-reasons" id="svwi-reasons"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /video-view -->
+
+<script src="/static/app.js"></script>
 </body>
 </html>
