@@ -19,6 +19,9 @@ pipeline/example_videos/
 pipeline/models/*.pt
 camera_model/runs/
 
+# Auto-tune run logs (generated at runtime)
+logs/autotune/
+
 # Jupyter
 .ipynb_checkpoints/
 

@@ -1,0 +1,27 @@
+{
+  "tuning_state": {
+    "w_camera": 5.0,
+    "w_weather": 10.06,
+    "w_confidence": 40.0,
+    "difficulty_factors": {
+      "1": 1.0,
+      "2": 1.0,
+      "3": 1.0,
+      "4": 0.517,
+      "5": 0.561
+    },
+    "neutral_cam": 0.92,
+    "wf_light_precip": 0.84,
+    "wf_mod_precip": 0.86,
+    "wf_heavy_precip": 0.693,
+    "wf_near_freeze": 1.0,
+    "wf_freeze": 0.85,
+    "smooth_window_sec": 3.75
+  },
+  "analyzer": {
+    "model": "rscd_resnet18_v2.onnx",
+    "use_crop": true,
+    "smooth_window_sec": 3.75
+  },
+  "ui": {}
+}

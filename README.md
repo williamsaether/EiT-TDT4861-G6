@@ -30,34 +30,39 @@ cd <repo>
 # 2. If you cloned before installing Git LFS, fetch the large files manually
 git lfs pull
 
-# 3. Install Python dependencies
-pip install -r web_demo/requirements.txt
+# 3. Run the unified app (driving demo + tuning dashboard)
+./run.sh
 
-# 4. Run the web demo
-python web_demo/app.py
-
-# 5. Open http://localhost:8000 in your browser
-```
-
-Or use the convenience script:
-
-```bash
-chmod +x run.sh && ./run.sh
+# 4. Open one of:
+#    http://localhost:8000/driving/
+#    http://localhost:8000/driving/examples
+#    http://localhost:8000/tuning/
 ```
 
 ## Project Structure
 
-- **web_demo/**
-  - `app.py`: Flask backend — runs ONNX inference on the demo videos and serves the UI.
-  - `requirements.txt`: Python dependencies for the web demo.
-  - `static/`: Frontend assets (JavaScript, CSS).
-  - `templates/`: HTML templates.
+- **app/**
+  - `app.py`: Single app entrypoint.
+  - `__init__.py`: Flask app factory and blueprint registration.
+  - `common/`: Shared logic/constants (tuned parameters + recommendation helpers).
+  - `driving/`: Driving demo routes, services, templates, static assets.
+  - `tuning/`: Auto-tuning dashboard split into focused modules:
+    - `routes.py`: API layer only.
+    - `config.py`: constants + metadata/video loading.
+    - `state.py`: tunable state model.
+    - `analyzer.py`: ONNX frame analysis pipeline.
+    - `recommendation_service.py`: recommendation aggregation logic.
+    - `autotune_service.py`: differential evolution optimizer.
+    - `templates/` + `static/`: UI assets.
+  - `requirements.txt`: Dependencies for both driving and tuning endpoints.
 
 - **pipeline/**
-  - `models/`: ONNX model files used for road-surface classification at runtime.
-  - `speed_limit/`: Speed limit calculation and simulation logic.
-  - `weather/`: Weather data integration.
-  - `data_pipeline.py`: Orchestrates the data flow from various sources.
+  - **Purpose**: experimentation, testing, and feature exploration (not the primary runtime path for the web app).
+  - `models/`: ONNX model files used by experiments and also discovered by the tuning UI.
+  - `speed_limit/`: exploratory speed-limit logic, simulations, and test helpers.
+  - `weather/`: exploratory weather integration variants.
+  - `data_pipeline.py`: research-style orchestration for trying ideas and provider combinations.
+  - Production endpoints under `/driving` and `/tuning` use code in `app/` as the source of truth.
 
 - **camera_model/**
   - `train_rscd.py`: Training script for the road scene classification model (ResNet18).
@@ -71,10 +76,14 @@ chmod +x run.sh && ./run.sh
 
 ## How It Works
 
-1. **Camera Model**: A ResNet18 model classifies each video frame into road-surface categories (dry asphalt, wet asphalt, fresh snow, ice, etc.).
-2. **Weather Data**: Temperature and precipitation from `metadata.json` produce a weather reduction factor.
-3. **Speed Recommendation**: Camera confidence and weather factor are blended with configurable weights to produce a safe recommended speed.
-4. **Web Demo**: The UI lets you scrub through each video, view per-frame predictions, and tune the blending parameters live. An auto-tune feature runs differential evolution to find optimal parameters against human survey targets.
+1. **Driving Demo (`/driving`)**:
+   - Frontend captures camera frames and performs local classification in-browser (simulating on-device/car inference).
+   - Backend receives classification + confidence, fetches weather context, resolves speed limit from Norwegian NVDB (`nvdbapiles.atlas.vegvesen.no`) with metadata fallback, and computes recommended speed.
+   - UI overlays current speed limit, weather, classification, and recommended speed on top of the live camera feed.
+   - Example-video mode (`/driving/examples`) uses only `metadata.json` entries with `forTraining: false`.
+2. **Auto-Tuning Dashboard (`/tuning`)**:
+   - Runs ONNX inference on the prerecorded videos.
+   - Lets you tune camera/weather blending parameters and compare against survey targets.
 
 ## Training / Exporting a New Model
 

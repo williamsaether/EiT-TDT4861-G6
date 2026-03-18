@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Speed Limit Tuning Dashboard</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="{{ url_for('tuning.static', filename='style.css') }}" />
 </head>
 <body>
 
@@ -209,60 +209,90 @@
         <h2>Score &amp; Settings</h2>
         <span class="panel-hint">Per-video weather loaded from metadata.json</span>
       </div>
-      <div class="sliders-col">
-        <div class="slider-row">
-          <label>
-            <span class="slider-name">Neutral cam factor</span>
-            <span class="slider-desc">Fallback when model is uncertain</span>
-          </label>
-          <div class="slider-control">
-            <input type="range" id="neutral_cam" min="0.1" max="1.0" step="0.01" value="0.88" />
-            <span class="slider-val" id="neutral_cam_val">0.88</span>
+
+      <div class="misc-grid">
+        <div class="misc-tile">
+          <div class="slider-row">
+            <label>
+              <span class="slider-name">Neutral cam factor</span>
+              <span class="slider-desc">Fallback when model is uncertain</span>
+            </label>
+            <div class="slider-control">
+              <input type="range" id="neutral_cam" min="0.1" max="1.0" step="0.01" value="0.88" />
+              <span class="slider-val" id="neutral_cam_val">0.88</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="panel-divider"></div>
-
-      <div class="overall-score-block">
-        <div class="osa-ring-wrap">
-          <svg class="osa-ring" viewBox="0 0 80 80">
-            <circle class="osa-track" cx="40" cy="40" r="34"/>
-            <circle class="osa-fill" id="score-ring-fill" cx="40" cy="40" r="34"
-              stroke-dasharray="213.63" stroke-dashoffset="213.63"/>
-          </svg>
-          <div class="osa-label">
-            <span id="score-num">0</span>
-            <span class="osa-den">/ 10</span>
+        <div class="misc-tile">
+          <div class="overall-score-block">
+            <div class="osa-ring-wrap">
+              <svg class="osa-ring" viewBox="0 0 80 80">
+                <circle class="osa-track" cx="40" cy="40" r="34"/>
+                <circle class="osa-fill" id="score-ring-fill" cx="40" cy="40" r="34"
+                  stroke-dasharray="213.63" stroke-dashoffset="213.63"/>
+              </svg>
+              <div class="osa-label">
+                <span id="score-num">0</span>
+                <span class="osa-den">/ 10</span>
+              </div>
+            </div>
+            <p class="osa-caption">Videos matching<br/>survey target ±0 km/h</p>
+            <div class="accuracy-breakdown" id="accuracy-breakdown">
+              <span class="acc-exact" id="acc-exact">0 exact</span>
+              <span class="acc-near" id="acc-near">0 within ±10</span>
+              <span class="acc-off" id="acc-off">0 off</span>
+            </div>
           </div>
         </div>
-        <p class="osa-caption">Videos matching<br/>survey target ±0 km/h</p>
-        <div class="accuracy-breakdown" id="accuracy-breakdown">
-          <span class="acc-exact" id="acc-exact">0 exact</span>
-          <span class="acc-near" id="acc-near">0 within ±10</span>
-          <span class="acc-off" id="acc-off">0 off</span>
-        </div>
-      </div>
 
-      <div class="panel-divider"></div>
-
-      <div class="smooth-block">
-        <div class="smooth-block-header">
-          <span class="slider-name">Smoothing window</span>
-          <span class="slider-val" id="global_smooth_window_val">3.0s</span>
+        <div class="misc-tile">
+          <div class="smooth-block">
+            <div class="smooth-block-header">
+              <span class="slider-name">Temporal smoothing</span>
+              <span class="slider-val" id="global_smooth_window_val">3.0s</span>
+            </div>
+            <span class="slider-desc">Backend window used for inference and auto-tuning</span>
+            <input type="range" id="global_smooth_window" min="0.5" max="10" step="0.5" value="3" />
+          </div>
         </div>
-        <span class="slider-desc">Frames averaged in live playback</span>
-        <input type="range" id="global_smooth_window" min="0.5" max="10" step="0.5" value="3" />
+
+        <div class="misc-tile">
+          <div class="model-selector-block model-selector-block--tight">
+            <div class="model-selector-header">
+              <span class="slider-name">Camera model</span>
+              <span class="model-status-badge" id="model-status-badge"></span>
+            </div>
+            <span class="slider-desc">Switch ONNX model — re-runs inference on all videos</span>
+            <div class="model-btn-group" id="model-btn-group">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="panel-divider"></div>
 
       <!-- Auto-tune -->
-      <button class="auto-tune-btn" id="auto-tune-btn" onclick="runAutoTune()">
-        <span class="atb-icon">⚡</span>
-        <span class="atb-text">Auto-tune</span>
-        <span class="atb-sub">Optimise all parameters</span>
-      </button>
+      <div class="auto-tune-controls">
+        <button class="auto-tune-btn" id="auto-tune-btn" onclick="runAutoTune()">
+          <span class="atb-icon">⚡</span>
+          <span class="atb-text">Auto-tune</span>
+          <span class="atb-sub">Optimise all parameters</span>
+        </button>
+        <button class="auto-tune-stop" id="auto-tune-stop" onclick="stopAutoTune()" style="display:none">
+          Stop
+        </button>
+      </div>
+      <div class="auto-tune-progress" id="auto-tune-progress" style="display:none">
+        <div class="atp-header">
+          <span id="auto-tune-progress-label">Preparing…</span>
+          <span id="auto-tune-progress-meta">0 / 0</span>
+        </div>
+        <div class="atp-track">
+          <div class="atp-fill" id="auto-tune-progress-fill"></div>
+        </div>
+      </div>
 
       <div class="auto-tune-result" id="auto-tune-result" style="display:none">
         <div class="atr-header">
@@ -286,20 +316,6 @@
           <span class="atr-metric-before" id="atr-iters" style="grid-column:span 3">—</span>
         </div>
         <div class="atr-video-list" id="atr-video-list"></div>
-      </div>
-
-      <div class="panel-divider"></div>
-
-      <!-- Model selector -->
-      <div class="model-selector-block">
-        <div class="model-selector-header">
-          <span class="slider-name">Camera model</span>
-          <span class="model-status-badge" id="model-status-badge"></span>
-        </div>
-        <span class="slider-desc">Switch ONNX model — re-runs inference on all videos</span>
-        <div class="model-btn-group" id="model-btn-group">
-          <!-- populated by JS -->
-        </div>
       </div>
 
       <div class="panel-divider"></div>
@@ -368,6 +384,7 @@
         <video id="main-video" controls preload="metadata">
           Your browser does not support video.
         </video>
+        <div id="main-crop-overlay" class="model-crop-overlay"></div>
       </div>
       <div class="frame-timeline" id="frame-timeline">
         <!-- Colored tick marks for frame predictions -->
@@ -473,7 +490,36 @@
           <input type="range" class="sv-range" id="sv_smooth_window" min="0.5" max="10" step="0.5" value="3" />
           <span class="svsr-val" id="sv_smooth_window_val">3.0s</span>
         </div>
-        <div class="smooth-frame-badge" id="smooth-frame-count">— frames averaged</div>
+        <div class="smooth-frame-badge" id="smooth-frame-count">— frame window (backend)</div>
+
+        <div class="sv-sliders-header" style="margin-top:12px">Custom crop for this video</div>
+        <div class="sv-crop-editor" id="sv-crop-editor">
+          <div class="sv-slider-row">
+            <span class="svsr-name">Left</span>
+            <input type="range" class="sv-range" id="sv_crop_left" min="0" max="0.9" step="0.01" value="0.35" />
+            <span class="svsr-val" id="sv_crop_left_val">0.35</span>
+          </div>
+          <div class="sv-slider-row">
+            <span class="svsr-name">Right</span>
+            <input type="range" class="sv-range" id="sv_crop_right" min="0.1" max="1" step="0.01" value="0.65" />
+            <span class="svsr-val" id="sv_crop_right_val">0.65</span>
+          </div>
+          <div class="sv-slider-row">
+            <span class="svsr-name">Top</span>
+            <input type="range" class="sv-range" id="sv_crop_top" min="0" max="0.9" step="0.01" value="0.60" />
+            <span class="svsr-val" id="sv_crop_top_val">0.60</span>
+          </div>
+          <div class="sv-slider-row">
+            <span class="svsr-name">Bottom</span>
+            <input type="range" class="sv-range" id="sv_crop_bottom" min="0.1" max="1" step="0.01" value="0.95" />
+            <span class="svsr-val" id="sv_crop_bottom_val">0.95</span>
+          </div>
+          <div class="sv-crop-actions">
+            <button class="model-btn" id="sv-crop-save" onclick="saveVideoCrop()">Save override</button>
+            <button class="model-btn" id="sv-crop-reset" onclick="resetVideoCrop()">Reset</button>
+          </div>
+          <div class="sv-crop-status" id="sv-crop-status">Using global crop</div>
+        </div>
 
         <div class="sv-sliders-header" style="margin-top:12px">Video Weather (from metadata)</div>
         <div class="sv-weather-info" id="sv-weather-info">
@@ -490,6 +536,6 @@
 
 </div><!-- /video-view -->
 
-<script src="/static/app.js"></script>
+<script src="{{ url_for('tuning.static', filename='app.js') }}"></script>
 </body>
 </html>

@@ -11,20 +11,24 @@ let currentVideoId = null;
 let videoFramePredictions = []; // [{t, scores}]
 let videoDuration = 0;
 let tuneDebounceTimer = null;
-let smoothWindowSec = 3.0;       // rolling average window for live playback
+let smoothWindowSec = 3.0;       // backend temporal smoothing window
+let autoTunePollTimer = null;
+let uiSettingsDebounceTimer = null;
 
 // Pending parameter changes (accumulated before debounced send)
 let pendingParams = {};
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
-  const res = await fetch('/api/init');
+  const res = await fetch('/tuning/api/init');
   const data = await res.json();
 
   videos = data.videos;
   state = data.state;
   classColors = data.class_colors;
   difficultyNames = data.difficulty_names;
+  if (data.crop_rect) cropRect = data.crop_rect;
+  cropOverrides = data.crop_overrides || {};
 
   // Store recommendations by video_id
   for (const r of data.recommendations) {
@@ -42,16 +46,55 @@ async function init() {
   // Initialise crop toggle from server state
   initCropToggle(data.analyzer?.use_crop ?? false);
 
+  const persistedSmooth = Number(
+    data.settings?.analyzer?.smooth_window_sec ?? data.settings?.ui?.smooth_window_sec
+  );
+  if (Number.isFinite(persistedSmooth) && persistedSmooth >= 0.5 && persistedSmooth <= 10) {
+    smoothWindowSec = persistedSmooth;
+  }
+  const gEl = document.getElementById('global_smooth_window');
+  const gLabel = document.getElementById('global_smooth_window_val');
+  const svEl = document.getElementById('sv_smooth_window');
+  const svLabel = document.getElementById('sv_smooth_window_val');
+  if (gEl) gEl.value = smoothWindowSec;
+  if (gLabel) gLabel.textContent = smoothWindowSec.toFixed(1) + 's';
+  if (svEl) svEl.value = smoothWindowSec;
+  if (svLabel) svLabel.textContent = smoothWindowSec.toFixed(1) + 's';
+
   // Poll analyzer status until all done
   pollAnalyzerStatus();
+}
+
+function scheduleSaveUiSettings() {
+  clearTimeout(uiSettingsDebounceTimer);
+  uiSettingsDebounceTimer = setTimeout(() => saveUiSettings(), 150);
+}
+
+async function saveUiSettings() {
+  try {
+    await fetch('/tuning/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        analyzer: {
+          smooth_window_sec: smoothWindowSec,
+        },
+      }),
+    });
+  } catch (e) {
+    console.error('Failed to persist UI settings:', e);
+  }
 }
 
 // ── Model selector ────────────────────────────────────────────────────────────
 let activeModel = '';
 let useCrop = false;
+let cropRect = { top: 0.60, bottom: 0.95, left: 0.35, right: 0.65 };
+let cropOverrides = {};
+let draftVideoCrop = null;
 
 async function initModelSelector() {
-  const res = await fetch('/api/models');
+  const res = await fetch('/tuning/api/models');
   const data = await res.json();
   activeModel = data.current;
   renderModelButtons(data.models, data.current);
@@ -96,7 +139,7 @@ async function switchModel(modelName) {
   // Update active highlight immediately for responsiveness
   btns.forEach(b => b.classList.toggle('model-btn--active', b.dataset.model === modelName));
 
-  const res = await fetch('/api/model', {
+  const res = await fetch('/tuning/api/model', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: modelName }),
@@ -139,10 +182,39 @@ function updateCropButtons() {
 
   const hint = document.getElementById('crop-region-hint');
   if (hint) {
+    const y1 = Math.round(cropRect.top * 100);
+    const y2 = Math.round(cropRect.bottom * 100);
+    const x1 = Math.round(cropRect.left * 100);
+    const x2 = Math.round(cropRect.right * 100);
     hint.textContent = useCrop
-      ? 'y 35–85 % · x 10–90 % of frame'
+      ? `y ${y1}-${y2} % · x ${x1}-${x2} % of frame`
       : '';
   }
+
+  applyCropOverlays();
+  updateVideoCropEditorEnabled();
+}
+
+function getCropForVideo(videoId) {
+  if (videoId && cropOverrides[videoId]) return cropOverrides[videoId];
+  return cropRect;
+}
+
+function applyCropRectToOverlay(el, rect) {
+  el.style.top = `${rect.top * 100}%`;
+  el.style.bottom = `${(1 - rect.bottom) * 100}%`;
+  el.style.left = `${rect.left * 100}%`;
+  el.style.right = `${(1 - rect.right) * 100}%`;
+}
+
+function applyCropOverlays() {
+  const overlays = document.querySelectorAll('.model-crop-overlay');
+  overlays.forEach((el) => {
+    const videoId = el.dataset.videoId || currentVideoId;
+    const rect = getCropForVideo(videoId);
+    applyCropRectToOverlay(el, rect);
+    el.style.display = useCrop ? 'block' : 'none';
+  });
 }
 
 async function setCrop(useC) {
@@ -159,7 +231,7 @@ async function setCrop(useC) {
     badge.textContent = 'Re-analysing…';
   }
 
-  const res = await fetch('/api/crop', {
+  const res = await fetch('/tuning/api/crop', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ use_crop: useC }),
@@ -196,8 +268,9 @@ async function setCrop(useC) {
 function pollAnalyzerStatus() { pollAnalyzerStatusThen(null); }
 
 async function pollAnalyzerStatusThen(onDone) {
-  const res = await fetch('/api/analyzer-status');
+  const res = await fetch('/tuning/api/analyzer-status');
   const data = await res.json();
+  cropOverrides = data.crop_overrides || cropOverrides;
 
   const statuses = Object.values(data.videos).map(v => v.status);
   const allDone = statuses.every(s => s === 'done' || s.startsWith('error') || s === 'file_not_found' || s === 'no_opencv');
@@ -214,6 +287,7 @@ async function pollAnalyzerStatusThen(onDone) {
     }
     // Refresh recommendations now that inference is done
     await refreshRecommendations();
+    applyCropOverlays();
     if (onDone) onDone();
   } else {
     const done = statuses.filter(s => s === 'done').length;
@@ -238,6 +312,18 @@ function applyStateToSliders(s) {
   if (s.wf_heavy_precip  !== undefined) setValue('wf_heavy_precip',  s.wf_heavy_precip,  false, true);
   if (s.wf_near_freeze   !== undefined) setValue('wf_near_freeze',   s.wf_near_freeze,   false, true);
   if (s.wf_freeze        !== undefined) setValue('wf_freeze',        s.wf_freeze,        false, true);
+
+  if (s.smooth_window_sec !== undefined) {
+    smoothWindowSec = Number(s.smooth_window_sec);
+    const gEl = document.getElementById('global_smooth_window');
+    const gLabel = document.getElementById('global_smooth_window_val');
+    const svEl = document.getElementById('sv_smooth_window');
+    const svLabel = document.getElementById('sv_smooth_window_val');
+    if (gEl) gEl.value = smoothWindowSec;
+    if (gLabel) gLabel.textContent = smoothWindowSec.toFixed(1) + 's';
+    if (svEl) svEl.value = smoothWindowSec;
+    if (svLabel) svLabel.textContent = smoothWindowSec.toFixed(1) + 's';
+  }
   // Also sync single-video sliders
   syncSvSliders(s);
 }
@@ -345,7 +431,7 @@ function scheduleTune(params) {
 
 async function sendTune(params) {
   try {
-    const res = await fetch('/api/tune', {
+    const res = await fetch('/tuning/api/tune', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(params),
@@ -369,7 +455,7 @@ async function sendTune(params) {
 
 async function refreshRecommendations() {
   try {
-    const res = await fetch('/api/recommendations');
+    const res = await fetch('/tuning/api/recommendations');
     const data = await res.json();
     state = data.state;
     for (const r of data.recommendations) {
@@ -403,6 +489,7 @@ function renderVideoGrid() {
     const rec = recommendations[v.video_id] || {};
     grid.appendChild(buildVideoCard(v, rec));
   }
+  applyCropOverlays();
 }
 
 function buildVideoCard(v, rec) {
@@ -435,7 +522,8 @@ function buildVideoCard(v, rec) {
 
   card.innerHTML = `
     <div class="vc-thumb">
-      <video muted preload="none" src="/videos/${v.filename}" id="thumb-${v.video_id}"></video>
+      <video muted preload="none" src="/tuning/videos/${v.filename}" id="thumb-${v.video_id}"></video>
+      <div class="model-crop-overlay" data-video-id="${v.video_id}"></div>
       ${processingDot}
       <div class="vc-overlay">
         <div class="vc-play-icon">
@@ -572,8 +660,12 @@ async function openVideo(videoId) {
 
   // Set video source
   const videoEl = document.getElementById('main-video');
-  videoEl.src = `/videos/${v.filename}`;
+  videoEl.src = `/tuning/videos/${v.filename}`;
   videoEl.load();
+  const mainOverlay = document.getElementById('main-crop-overlay');
+  if (mainOverlay) mainOverlay.dataset.videoId = videoId;
+  applyCropOverlays();
+  await loadVideoCropEditor(videoId);
 
   // Switch views
   document.getElementById('master-view').classList.remove('active');
@@ -585,33 +677,35 @@ async function openVideo(videoId) {
   // Fetch pre-computed frame predictions
   videoFramePredictions = [];
   videoDuration = 0;
+  await loadVideoPredictions(videoId, v);
+
+  // Wire video timeupdate
+  videoEl.ontimeupdate = () => onVideoTimeUpdate(videoEl.currentTime);
+}
+
+async function loadVideoPredictions(videoId, videoMeta) {
   try {
-    const res = await fetch(`/api/video/${videoId}/predictions`);
+    const res = await fetch(`/tuning/api/video/${videoId}/predictions`);
     const data = await res.json();
     videoFramePredictions = data.frames || [];
     videoDuration = data.duration || 0;
     renderFrameTimeline();
 
-    // Show weather info from metadata
     if (data.weather) {
       renderWeatherInfo(data.weather);
     }
 
-    // Show avg recommendation
     if (data.avg_recommendation) {
       updateSvPrediction({
         recommended_speed: data.avg_recommendation.recommended,
-        target_speed: v.target_speed,
-        delta: data.avg_recommendation.recommended - v.target_speed,
+        target_speed: videoMeta.target_speed,
+        delta: data.avg_recommendation.recommended - videoMeta.target_speed,
         details: data.avg_recommendation,
       });
     }
   } catch (e) {
     console.error('Failed to load predictions:', e);
   }
-
-  // Wire video timeupdate
-  videoEl.ontimeupdate = () => onVideoTimeUpdate(videoEl.currentTime);
 }
 
 function showMaster() {
@@ -620,6 +714,135 @@ function showMaster() {
   currentVideoId = null;
   document.getElementById('video-view').classList.remove('active');
   document.getElementById('master-view').classList.add('active');
+}
+
+function updateVideoCropEditorEnabled() {
+  const editor = document.getElementById('sv-crop-editor');
+  if (!editor) return;
+  const disabled = !useCrop;
+  editor.classList.toggle('sv-crop-editor--disabled', disabled);
+  editor.querySelectorAll('input,button').forEach((el) => {
+    el.disabled = disabled;
+  });
+  const status = document.getElementById('sv-crop-status');
+  if (status && disabled) {
+    status.textContent = 'Enable "Road crop" in dashboard to use per-video crop';
+  }
+}
+
+function readDraftVideoCrop() {
+  const left = parseFloat(document.getElementById('sv_crop_left').value);
+  const right = parseFloat(document.getElementById('sv_crop_right').value);
+  const top = parseFloat(document.getElementById('sv_crop_top').value);
+  const bottom = parseFloat(document.getElementById('sv_crop_bottom').value);
+
+  const rect = { left, right, top, bottom };
+  if (rect.right - rect.left < 0.05) rect.right = Math.min(1.0, rect.left + 0.05);
+  if (rect.bottom - rect.top < 0.05) rect.bottom = Math.min(1.0, rect.top + 0.05);
+  return rect;
+}
+
+function setCropEditorRect(rect) {
+  const ids = ['left', 'right', 'top', 'bottom'];
+  for (const k of ids) {
+    const input = document.getElementById(`sv_crop_${k}`);
+    const val = document.getElementById(`sv_crop_${k}_val`);
+    if (input) input.value = Number(rect[k]).toFixed(2);
+    if (val) val.textContent = Number(rect[k]).toFixed(2);
+  }
+}
+
+function updateDraftCropPreview() {
+  if (!currentVideoId || !draftVideoCrop) return;
+  const overlay = document.getElementById('main-crop-overlay');
+  if (overlay) applyCropRectToOverlay(overlay, draftVideoCrop);
+}
+
+async function loadVideoCropEditor(videoId) {
+  try {
+    const res = await fetch(`/tuning/api/video/${videoId}/crop`);
+    const data = await res.json();
+    if (!data.ok) return;
+    const rect = data.crop || cropRect;
+    draftVideoCrop = { ...rect };
+    setCropEditorRect(rect);
+    const status = document.getElementById('sv-crop-status');
+    if (status) status.textContent = data.has_override ? 'Custom override active' : 'Using global crop';
+    updateVideoCropEditorEnabled();
+    updateDraftCropPreview();
+  } catch (e) {
+    console.error('Failed to load video crop:', e);
+  }
+}
+
+async function saveVideoCrop() {
+  if (!currentVideoId) return;
+  const status = document.getElementById('sv-crop-status');
+  const rect = readDraftVideoCrop();
+  draftVideoCrop = { ...rect };
+  if (status) status.textContent = 'Saving and re-analysing…';
+
+  try {
+    const res = await fetch(`/tuning/api/video/${currentVideoId}/crop`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ crop: rect }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      if (status) status.textContent = `Save failed: ${data.error || 'unknown error'}`;
+      return;
+    }
+
+    cropOverrides[currentVideoId] = data.crop;
+    applyCropOverlays();
+    const analyzerBadge = document.getElementById('analyzer-badge');
+    if (analyzerBadge) {
+      analyzerBadge.className = 'badge';
+      analyzerBadge.innerHTML = '<span class="dot"></span> Processing videos…';
+    }
+    pollAnalyzerStatusThen(async () => {
+      const v = videos.find(x => x.video_id === currentVideoId);
+      if (v) await loadVideoPredictions(currentVideoId, v);
+      if (status) status.textContent = 'Custom override active';
+      applyCropOverlays();
+    });
+  } catch (e) {
+    if (status) status.textContent = 'Save failed: network error';
+    console.error('Failed to save video crop:', e);
+  }
+}
+
+async function resetVideoCrop() {
+  if (!currentVideoId) return;
+  const status = document.getElementById('sv-crop-status');
+  if (status) status.textContent = 'Resetting and re-analysing…';
+  try {
+    const res = await fetch(`/tuning/api/video/${currentVideoId}/crop`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.ok) {
+      if (status) status.textContent = `Reset failed: ${data.error || 'unknown error'}`;
+      return;
+    }
+    delete cropOverrides[currentVideoId];
+    draftVideoCrop = { ...(data.crop || cropRect) };
+    setCropEditorRect(draftVideoCrop);
+    applyCropOverlays();
+    const analyzerBadge = document.getElementById('analyzer-badge');
+    if (analyzerBadge) {
+      analyzerBadge.className = 'badge';
+      analyzerBadge.innerHTML = '<span class="dot"></span> Processing videos…';
+    }
+    pollAnalyzerStatusThen(async () => {
+      const v = videos.find(x => x.video_id === currentVideoId);
+      if (v) await loadVideoPredictions(currentVideoId, v);
+      if (status) status.textContent = 'Using global crop';
+      applyCropOverlays();
+    });
+  } catch (e) {
+    if (status) status.textContent = 'Reset failed: network error';
+    console.error('Failed to reset video crop:', e);
+  }
 }
 
 /**
@@ -686,13 +909,13 @@ function recomputeCurrentFramePrediction() {
 
 function updateSmoothingIndicator(frameCount) {
   const el = document.getElementById('smooth-frame-count');
-  if (el) el.textContent = `${frameCount} frame${frameCount !== 1 ? 's' : ''} averaged`;
+  if (el) el.textContent = `${frameCount} frame${frameCount !== 1 ? 's' : ''} window (backend)`;
 }
 
 async function recomputeFramePrediction(scores) {
   if (!currentVideoId) return;
   try {
-    const res = await fetch(`/api/video/${currentVideoId}/frame-recommendation`, {
+    const res = await fetch(`/tuning/api/video/${currentVideoId}/frame-recommendation`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ scores }),
@@ -843,81 +1066,141 @@ function formatLabel(label) {
 
 // ── Wire up master sliders ────────────────────────────────────────────────────
 // ── Auto-tune ─────────────────────────────────────────────────────────────────
+function applyAutoTuneResult(data) {
+  const resultPanel = document.getElementById('auto-tune-result');
+  if (resultPanel) resultPanel.style.display = 'block';
+
+  applyStateToSliders(data.state);
+  updateWeightBar(data.state);
+
+  updateAllVideoCards(data.recommendations);
+  updateScoreDisplay(data.n_match_after, data.total, data.recommendations);
+  for (const r of data.recommendations) {
+    recommendations[r.video_id] = r;
+  }
+
+  const itersEl = document.getElementById('atr-iters');
+  const convEl = document.getElementById('atr-converged');
+
+  const exactBefore = document.getElementById('atr-exact-before');
+  const exactAfter = document.getElementById('atr-exact-after');
+  const nearBefore = document.getElementById('atr-near-before');
+  const nearAfter = document.getElementById('atr-near-after');
+  if (exactBefore) exactBefore.textContent = `${data.n_match_before}/10`;
+  if (exactAfter) exactAfter.textContent = `${data.n_match_after}/10`;
+  if (nearBefore) nearBefore.textContent = `${data.n_near_before}/10`;
+  if (nearAfter) nearAfter.textContent = `${data.n_near_after}/10`;
+  if (itersEl) itersEl.textContent = data.n_iterations;
+  if (convEl) {
+    convEl.textContent = data.converged ? '✓ Converged' : '⚠ Stopped early';
+    convEl.style.color = data.converged ? 'var(--green)' : 'var(--yellow)';
+  }
+
+  const listEl = document.getElementById('atr-video-list');
+  if (listEl && data.per_video) {
+    listEl.innerHTML = data.per_video.map(v => {
+      const matchCls = v.match ? 'atr-match-yes' : Math.abs(v.delta) <= 10 ? 'atr-match-near' : 'atr-match-no';
+      const deltaStr = v.delta === 0 ? '✓' : `${v.delta > 0 ? '+' : ''}${v.delta}`;
+      const diffLabel = v.difficulty.charAt(0).toUpperCase();
+      return `<div class="atr-row ${matchCls}">
+        <span class="atr-vid">${v.video_id.toUpperCase()}</span>
+        <span class="atr-diff diff-${v.difficulty}">${diffLabel}</span>
+        <span class="atr-target">${v.target} km/h</span>
+        <span class="atr-rec">${v.recommended} km/h</span>
+        <span class="atr-delta">${deltaStr}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+function setAutoTuneUiRunning(running) {
+  const btn = document.getElementById('auto-tune-btn');
+  const stopBtn = document.getElementById('auto-tune-stop');
+  const prog = document.getElementById('auto-tune-progress');
+  if (!btn || !stopBtn || !prog) return;
+  btn.disabled = running;
+  stopBtn.style.display = running ? 'inline-block' : 'none';
+  prog.style.display = running ? 'block' : 'none';
+  if (!running) {
+    btn.innerHTML = `<span class="atb-icon">⚡</span><span class="atb-text">Auto-tune</span><span class="atb-sub">Run again</span>`;
+  }
+}
+
+function updateAutoTuneProgressUi(status) {
+  const fill = document.getElementById('auto-tune-progress-fill');
+  const label = document.getElementById('auto-tune-progress-label');
+  const meta = document.getElementById('auto-tune-progress-meta');
+  if (!fill || !label || !meta) return;
+
+  const pct = Math.max(0, Math.min(1, Number(status.progress || 0)));
+  fill.style.width = `${(pct * 100).toFixed(1)}%`;
+  label.textContent = status.message || 'Optimising...';
+  meta.textContent = `${status.iteration || 0} / ${status.maxiter || 0} · exact ${status.best_exact || 0}/10`;
+}
+
+async function pollAutoTuneStatus() {
+  const res = await fetch('/tuning/api/auto-tune/status');
+  const status = await res.json();
+  if (!status.ok) return;
+
+  updateAutoTuneProgressUi(status);
+
+  if (status.status === 'done' && status.result) {
+    if (autoTunePollTimer) clearInterval(autoTunePollTimer);
+    autoTunePollTimer = null;
+    applyAutoTuneResult(status.result);
+    setAutoTuneUiRunning(false);
+    return;
+  }
+
+  if (status.status === 'error') {
+    if (autoTunePollTimer) clearInterval(autoTunePollTimer);
+    autoTunePollTimer = null;
+    setAutoTuneUiRunning(false);
+    const btn = document.getElementById('auto-tune-btn');
+    if (btn) {
+      btn.innerHTML = `<span class="atb-icon">⚡</span><span class="atb-text">Auto-tune</span><span class="atb-sub">Error: ${status.message || 'failed'}</span>`;
+    }
+  }
+}
+
 async function runAutoTune() {
   const btn = document.getElementById('auto-tune-btn');
-  const resultPanel = document.getElementById('auto-tune-result');
-
-  // Show loading state
-  btn.disabled = true;
-  btn.innerHTML = `<span class="atb-icon at-spin">⚙</span><span class="atb-text">Optimising…</span><span class="atb-sub">This takes ~5 seconds</span>`;
+  setAutoTuneUiRunning(true);
+  if (btn) {
+    btn.innerHTML = `<span class="atb-icon at-spin">⚙</span><span class="atb-text">Optimising…</span><span class="atb-sub">Can take several minutes</span>`;
+  }
 
   try {
-    const res = await fetch('/api/auto-tune', { method: 'POST' });
+    const res = await fetch('/tuning/api/auto-tune/start', { method: 'POST' });
     const data = await res.json();
-
-    if (data.error) {
-      btn.disabled = false;
-      btn.innerHTML = `<span class="atb-icon">⚡</span><span class="atb-text">Auto-tune</span><span class="atb-sub">Error: ${data.error}</span>`;
+    if (!data.ok) {
+      setAutoTuneUiRunning(false);
+      if (btn) {
+        btn.innerHTML = `<span class="atb-icon">⚡</span><span class="atb-text">Auto-tune</span><span class="atb-sub">Error: ${data.error || 'failed'}</span>`;
+      }
       return;
     }
 
-    // Apply new state to all sliders
-    applyStateToSliders(data.state);
-    updateWeightBar(data.state);
-
-    // Update all video cards
-    updateAllVideoCards(data.recommendations);
-    updateScoreDisplay(data.n_match_after, data.total, data.recommendations);
-    for (const r of data.recommendations) {
-      recommendations[r.video_id] = r;
-    }
-
-    // Show result panel
-    resultPanel.style.display = 'block';
-    const beforeEl = document.getElementById('atr-before');
-    const afterEl  = document.getElementById('atr-after');
-    const itersEl  = document.getElementById('atr-iters');
-    const convEl   = document.getElementById('atr-converged');
-
-    const exactBefore = document.getElementById('atr-exact-before');
-    const exactAfter  = document.getElementById('atr-exact-after');
-    const nearBefore  = document.getElementById('atr-near-before');
-    const nearAfter   = document.getElementById('atr-near-after');
-    if (exactBefore) exactBefore.textContent = `${data.n_match_before}/10`;
-    if (exactAfter)  exactAfter.textContent  = `${data.n_match_after}/10`;
-    if (nearBefore)  nearBefore.textContent  = `${data.n_near_before}/10`;
-    if (nearAfter)   nearAfter.textContent   = `${data.n_near_after}/10`;
-    if (itersEl)  itersEl.textContent  = data.n_iterations;
-    if (convEl) {
-      convEl.textContent = data.converged ? '✓ Converged' : '⚠ Not converged';
-      convEl.style.color = data.converged ? 'var(--green)' : 'var(--yellow)';
-    }
-
-    // Per-video breakdown
-    const listEl = document.getElementById('atr-video-list');
-    if (listEl && data.per_video) {
-      listEl.innerHTML = data.per_video.map(v => {
-        const matchCls = v.match ? 'atr-match-yes' : Math.abs(v.delta) <= 10 ? 'atr-match-near' : 'atr-match-no';
-        const deltaStr = v.delta === 0 ? '✓' : `${v.delta > 0 ? '+' : ''}${v.delta}`;
-        const diffLabel = v.difficulty.charAt(0).toUpperCase();
-        return `<div class="atr-row ${matchCls}">
-          <span class="atr-vid">${v.video_id.toUpperCase()}</span>
-          <span class="atr-diff diff-${v.difficulty}">${diffLabel}</span>
-          <span class="atr-target">${v.target} km/h</span>
-          <span class="atr-rec">${v.recommended} km/h</span>
-          <span class="atr-delta">${deltaStr}</span>
-        </div>`;
-      }).join('');
-    }
-
-    // Reset button
-    btn.disabled = false;
-    btn.innerHTML = `<span class="atb-icon">⚡</span><span class="atb-text">Auto-tune</span><span class="atb-sub">Run again</span>`;
-
+    if (autoTunePollTimer) clearInterval(autoTunePollTimer);
+    await pollAutoTuneStatus();
+    autoTunePollTimer = setInterval(() => {
+      pollAutoTuneStatus().catch((e) => console.error('Auto-tune status poll failed:', e));
+    }, 1000);
   } catch (e) {
-    btn.disabled = false;
-    btn.innerHTML = `<span class="atb-icon">⚡</span><span class="atb-text">Auto-tune</span><span class="atb-sub">Network error</span>`;
+    setAutoTuneUiRunning(false);
+    if (btn) {
+      btn.innerHTML = `<span class="atb-icon">⚡</span><span class="atb-text">Auto-tune</span><span class="atb-sub">Network error</span>`;
+    }
     console.error('Auto-tune failed:', e);
+  }
+}
+
+async function stopAutoTune() {
+  try {
+    await fetch('/tuning/api/auto-tune/stop', { method: 'POST' });
+  } catch (e) {
+    console.error('Failed to stop auto-tune:', e);
   }
 }
 
@@ -960,6 +1243,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (svEl) { svEl.value = smoothWindowSec; }
       const svLabel = document.getElementById('sv_smooth_window_val');
       if (svLabel) svLabel.textContent = smoothWindowSec.toFixed(1) + 's';
+      scheduleSaveUiSettings();
       recomputeCurrentFramePrediction();
     });
   }
@@ -976,9 +1260,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (gEl) { gEl.value = smoothWindowSec; }
       const gLabel = document.getElementById('global_smooth_window_val');
       if (gLabel) gLabel.textContent = smoothWindowSec.toFixed(1) + 's';
+      scheduleSaveUiSettings();
       recomputeCurrentFramePrediction();
     });
   }
+
+  ['left', 'right', 'top', 'bottom'].forEach((k) => {
+    const el = document.getElementById(`sv_crop_${k}`);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      draftVideoCrop = readDraftVideoCrop();
+      setCropEditorRect(draftVideoCrop);
+      updateDraftCropPreview();
+    });
+  });
 
   init();
 });

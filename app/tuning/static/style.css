@@ -122,7 +122,11 @@ html, body {
 
 /* ── Tuning row ──────────────────────────────────────────── */
 .tuning-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.05fr 1.05fr 1.4fr;
+  grid-template-areas:
+    "weights factors misc"
+    "weights weather misc";
   gap: 16px;
   padding: 16px 24px 0;
   flex-shrink: 0;
@@ -137,7 +141,12 @@ html, body {
   flex: 1;
   min-width: 0;
 }
-.panel-narrow { flex: 0 0 260px; }
+.panel-narrow { flex: unset; }
+
+#weights-panel { grid-area: weights; }
+#factors-panel { grid-area: factors; }
+#weather-factors-panel { grid-area: weather; }
+#misc-panel { grid-area: misc; }
 
 .panel-header { margin-bottom: 12px; }
 .panel-header h2 { font-size: 14px; font-weight: 600; }
@@ -285,6 +294,42 @@ input[type="range"]::-moz-range-thumb {
   gap: 8px;
 }
 
+.misc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.misc-tile {
+  background: var(--bg3);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px;
+  min-width: 0;
+}
+
+.misc-tile .slider-row {
+  align-items: flex-start;
+}
+
+.misc-tile .slider-row label {
+  flex: 0 0 115px;
+}
+
+.misc-tile .slider-name {
+  font-size: 12px;
+}
+
+.misc-tile .slider-desc {
+  font-size: 10px;
+}
+
+.model-selector-block--tight {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
 .osa-ring-wrap {
   position: relative;
   width: 80px; height: 80px;
@@ -360,8 +405,17 @@ input[type="range"]::-moz-range-thumb {
 }
 @media (max-width: 960px) {
   .video-grid { grid-template-columns: repeat(3, 1fr); }
-  .panel-narrow { flex: 1; }
-  .tuning-row { flex-wrap: wrap; }
+  .tuning-row {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "weights"
+      "factors"
+      "weather"
+      "misc";
+  }
+  .misc-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Video card ──────────────────────────────────────────── */
@@ -382,7 +436,7 @@ input[type="range"]::-moz-range-thumb {
 
 .vc-thumb {
   width: 100%;
-  aspect-ratio: 16/9;
+  aspect-ratio: 2 / 1;
   background: var(--bg3);
   position: relative;
   overflow: hidden;
@@ -393,6 +447,15 @@ input[type="range"]::-moz-range-thumb {
   object-fit: cover;
   display: block;
   pointer-events: none;
+}
+.model-crop-overlay {
+  position: absolute;
+  border: 2px dashed rgba(248, 81, 73, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(248, 81, 73, 0.35);
+  border-radius: 8px;
+  pointer-events: none;
+  display: none;
+  z-index: 3;
 }
 .vc-overlay {
   position: absolute;
@@ -595,6 +658,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .video-wrap {
+  position: relative;
+  aspect-ratio: 2 / 1;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: #000;
@@ -602,9 +667,9 @@ input[type="range"]::-moz-range-thumb {
 }
 .video-wrap video {
   width: 100%;
+  height: 100%;
   display: block;
-  max-height: 55vh;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 /* Frame timeline */
@@ -834,6 +899,31 @@ input[type="range"]::-moz-range-thumb {
   opacity: 0.8;
 }
 
+/* ── Per-video crop editor ───────────────────────────────── */
+.sv-crop-editor {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.sv-crop-editor--disabled {
+  opacity: 0.55;
+}
+.sv-crop-actions {
+  display: flex;
+  gap: 8px;
+}
+.sv-crop-actions .model-btn {
+  flex: 1;
+}
+.sv-crop-status {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 /* ── Single-video weather info ───────────────────────────── */
 .sv-weather-info {
   background: var(--bg2);
@@ -893,6 +983,54 @@ input[type="range"]::-moz-range-thumb {
 }
 .auto-tune-btn:active:not(:disabled) { transform: translateY(0); }
 .auto-tune-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.auto-tune-controls {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.auto-tune-stop {
+  border: 1px solid rgba(248,81,73,0.5);
+  background: rgba(248,81,73,0.12);
+  color: var(--red);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.auto-tune-progress {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--bg3);
+}
+
+.atp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.atp-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.atp-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--green));
+  transition: width 0.3s ease;
+}
 
 .atb-icon {
   font-size: 22px;

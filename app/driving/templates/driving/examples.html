@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Driving Demo - Examples</title>
+  <link rel="stylesheet" href="{{ url_for('driving.static', filename='style.css') }}" />
+</head>
+<body>
+  <main class="layout">
+    <section class="controls-card">
+      <label for="example-select">Example video</label>
+      <select id="example-select"></select>
+      <button id="crop-toggle" type="button">Crop: on</button>
+      <a class="mode-link" href="/driving/">Switch to camera mode</a>
+    </section>
+
+    <section class="camera-card">
+      <video id="example-video" controls playsinline></video>
+      <canvas id="work-canvas" width="224" height="224" aria-hidden="true"></canvas>
+      <div id="model-crop-overlay" class="model-crop-overlay"></div>
+
+      <div class="overlay top-left">Speed limit: <strong id="speed-limit">--</strong> km/h</div>
+      <div class="overlay top-right">Weather: <strong id="weather">--</strong></div>
+      <div class="overlay bottom-center">Recommended: <strong id="recommended">--</strong> km/h</div>
+      <div class="overlay bottom-left">Local class: <strong id="classification">--</strong></div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('driving.static', filename='examples.js') }}"></script>
+</body>
+</html>

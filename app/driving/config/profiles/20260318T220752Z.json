@@ -1,0 +1,22 @@
+{
+  "profile_name": "autotune_20260318T220752Z",
+  "source_log": "logs/autotune/20260318T220752Z.json",
+  "w_camera": 5.0,
+  "w_weather": 10.06,
+  "w_confidence": 40.0,
+  "neutral_cam": 0.92,
+  "difficulty_factors": {
+    "1": 1.0,
+    "2": 1.0,
+    "3": 1.0,
+    "4": 0.517,
+    "5": 0.561
+  },
+  "weather_factors": {
+    "light_precip": 0.84,
+    "moderate_precip": 0.86,
+    "heavy_precip": 0.693,
+    "near_freeze": 1.0,
+    "freeze": 0.85
+  }
+}

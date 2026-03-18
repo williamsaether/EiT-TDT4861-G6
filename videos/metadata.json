@@ -6,9 +6,10 @@
         "lon": 6.745856,
         "altitude": 752,
         "speedlimit": 60,
-        "temp": -2.5,
+        "temp": 0.5,
         "humidity": 82.0,
-        "precipitation": 0.0
+        "precipitation": 0.0,
+        "forTraining": true
     },
     {
         "video": "v02.mp4",
@@ -19,7 +20,8 @@
         "speedlimit": 60,
         "temp": 0.8,
         "humidity": 88.0,
-        "precipitation": 0.0
+        "precipitation": 0.0,
+        "forTraining": true
     },
     {
         "video": "v03.mp4",
@@ -30,7 +32,8 @@
         "speedlimit": 80,
         "temp": -3.8,
         "humidity": 91.0,
-        "precipitation": 0.3
+        "precipitation": 0.3,
+        "forTraining": true
     },
     {
         "video": "v04.mp4",
@@ -41,7 +44,8 @@
         "speedlimit": 80,
         "temp": -5.2,
         "humidity": 97.0,
-        "precipitation": 12.0
+        "precipitation": 12.0,
+        "forTraining": true
     },
     {
         "video": "v05.mp4",
@@ -52,7 +56,8 @@
         "speedlimit": 90,
         "temp": -7.0,
         "humidity": 98.0,
-        "precipitation": 12.2
+        "precipitation": 12.2,
+        "forTraining": true
     },
     {
         "video": "v06.mp4",
@@ -63,7 +68,8 @@
         "speedlimit": 70,
         "temp": -9.5,
         "humidity": 99.0,
-        "precipitation": 12.0
+        "precipitation": 12.0,
+        "forTraining": true
     },
     {
         "video": "v07.mp4",
@@ -74,7 +80,8 @@
         "speedlimit": 80,
         "temp": -1.2,
         "humidity": 90.0,
-        "precipitation": 2.1
+        "precipitation": 2.1,
+        "forTraining": true
     },
     {
         "video": "v08.mp4",
@@ -85,7 +92,8 @@
         "speedlimit": 80,
         "temp": -2.5,
         "humidity": 80.0,
-        "precipitation": 0.0
+        "precipitation": 0.0,
+        "forTraining": true
     },
     {
         "video": "v09.mp4",
@@ -96,7 +104,8 @@
         "speedlimit": 80,
         "temp": -4.0,
         "humidity": 95.0,
-        "precipitation": 7.8
+        "precipitation": 7.8,
+        "forTraining": true
     },
     {
         "video": "v10.mp4",
@@ -107,6 +116,27 @@
         "speedlimit": 70,
         "temp": -4.5,
         "humidity": 96.0,
-        "precipitation": 5.6
+        "precipitation": 5.6,
+        "forTraining": true
+    },
+    {
+        "video": "v11.mp4",
+        "lat": 69.293296,
+        "lon": 17.856675,
+        "altitude": 46,
+        "temp": 1.5,
+        "humidity": 78.0,
+        "precipitation": 0.0,
+        "forTraining": false
+    },
+    {
+        "video": "v12.mp4",
+        "lat": 68.324130,
+        "lon": 15.623586,
+        "altitude": 3,
+        "temp": -6.0,
+        "humidity": 65.0,
+        "precipitation": 0.0,
+        "forTraining": false
     }
 ]

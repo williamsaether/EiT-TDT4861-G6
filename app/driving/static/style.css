@@ -1,0 +1,121 @@
+:root {
+  --bg: #0b1020;
+  --text: #f2f4f8;
+  --accent: #54d2a0;
+  --warn: #ffcc66;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at top right, #16244a 0%, #0b1020 60%);
+}
+
+.layout {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.controls-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  background: rgba(11, 16, 32, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.controls-card label {
+  font-size: 13px;
+}
+
+.controls-card select {
+  background: #111a31;
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.controls-card button {
+  background: #111a31;
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.controls-card button:hover {
+  border-color: rgba(84, 210, 160, 0.65);
+}
+
+.mode-link {
+  margin-left: auto;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.camera-card {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: #000;
+  aspect-ratio: 2 / 1;
+}
+
+.camera-card video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+#work-canvas {
+  display: none;
+}
+
+.overlay {
+  position: absolute;
+  background: rgba(11, 16, 32, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  backdrop-filter: blur(6px);
+}
+
+.model-crop-overlay {
+  position: absolute;
+  top: 60%;
+  bottom: 5%;
+  left: 35%;
+  right: 35%;
+  border: 2px dashed rgba(248, 81, 73, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(248, 81, 73, 0.35);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.overlay strong { color: var(--accent); }
+.top-left { top: 14px; left: 14px; }
+.top-right { top: 14px; right: 14px; }
+.bottom-center {
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+}
+.bottom-center strong { color: var(--warn); }
+.bottom-left { bottom: 14px; left: 14px; }
+
+@media (min-width: 900px) {
+  .camera-card { width: 100%; }
+}
