@@ -45,6 +45,8 @@ git lfs pull
   - `app.py`: Single app entrypoint.
   - `__init__.py`: Flask app factory and blueprint registration.
   - `common/`: Shared logic/constants (tuned parameters + recommendation helpers).
+    - `common/providers/`: Shared provider core for NVDB speed limits and weather lookup.
+    - `common/core/context_provider.py`: Shared context pipeline used by web and reusable scripts.
   - `driving/`: Driving demo routes, services, templates, static assets.
   - `tuning/`: Auto-tuning dashboard split into focused modules:
     - `routes.py`: API layer only.
@@ -56,13 +58,18 @@ git lfs pull
     - `templates/` + `static/`: UI assets.
   - `requirements.txt`: Dependencies for both driving and tuning endpoints.
 
-- **pipeline/**
+- **research/**
   - **Purpose**: experimentation, testing, and feature exploration (not the primary runtime path for the web app).
-  - `models/`: ONNX model files used by experiments and also discovered by the tuning UI.
   - `speed_limit/`: exploratory speed-limit logic, simulations, and test helpers.
   - `weather/`: exploratory weather integration variants.
   - `data_pipeline.py`: research-style orchestration for trying ideas and provider combinations.
   - Production endpoints under `/driving` and `/tuning` use code in `app/` as the source of truth.
+
+- **models/**
+  - `checkpoints/`: PyTorch checkpoints (`.pt`) used for training/evaluation.
+  - `onnx/`: Runtime ONNX models discovered by tuning and research tools.
+  - `eval/`: Evaluation summaries (`eval_summary*.json`).
+  - `manifest.json`: Canonical inventory of model artifacts.
 
 - **camera_model/**
   - `train_rscd.py`: Training script for the road scene classification model (ResNet18).
@@ -90,13 +97,17 @@ git lfs pull
 ```bash
 # Train
 python camera_model/train_rscd.py
+# (saves checkpoints under runs/rscd_resnet18 by default)
 
 # Export the best checkpoint to ONNX
-python camera_model/pt_to_onnx.py
-# Places the new .onnx file in pipeline/models/
+python camera_model/pt_to_onnx.py --pt models/checkpoints/rscd_resnet18_v2.pt --onnx models/onnx/rscd_resnet18_v2.onnx
+
+# Evaluate checkpoints
+python camera_model/evaluate_saved_models.py
+# (reads models/checkpoints and writes models/eval/eval_summary.json by default)
 ```
 
-The web demo automatically discovers all `.onnx` files in `pipeline/models/` and lets you switch between them in the UI.
+The web demo automatically discovers all `.onnx` files in `models/onnx/` and lets you switch between them in the UI.
 
 ## Authors & License
 

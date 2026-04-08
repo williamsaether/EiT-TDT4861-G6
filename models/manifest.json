@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "description": "Canonical inventory of model artifacts.",
+  "artifacts": [
+    {
+      "name": "rscd_resnet18",
+      "type": "checkpoint",
+      "path": "models/checkpoints/rscd_resnet18.pt",
+      "framework": "pytorch"
+    },
+    {
+      "name": "rscd_resnet18_v2",
+      "type": "checkpoint",
+      "path": "models/checkpoints/rscd_resnet18_v2.pt",
+      "framework": "pytorch"
+    },
+    {
+      "name": "rscd_resnet18",
+      "type": "onnx",
+      "path": "models/onnx/rscd_resnet18.onnx",
+      "framework": "onnx"
+    },
+    {
+      "name": "rscd_resnet18_v2",
+      "type": "onnx",
+      "path": "models/onnx/rscd_resnet18_v2.onnx",
+      "framework": "onnx"
+    },
+    {
+      "name": "rscd_resnet18_v3",
+      "type": "onnx",
+      "path": "models/onnx/rscd_resnet18_v3.onnx",
+      "framework": "onnx"
+    }
+  ],
+  "evaluation": [
+    {
+      "name": "eval_summary",
+      "path": "models/eval/eval_summary.json"
+    },
+    {
+      "name": "eval_summary_quickcheck",
+      "path": "models/eval/eval_summary.quickcheck.json"
+    }
+  ]
+}

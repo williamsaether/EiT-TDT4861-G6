@@ -9,7 +9,7 @@ from app.common.crop import CROP_BOTTOM, CROP_LEFT, CROP_RIGHT, CROP_TOP
 ROOT = Path(__file__).resolve().parent.parent.parent
 VIDEOS_DIR = ROOT / "videos"
 CSV_PATH = ROOT / "merged_survey.csv"
-MODELS_DIR = ROOT / "pipeline" / "models"
+MODELS_DIR = ROOT / "models" / "onnx"
 DEFAULT_MODEL_NAME = "rscd_resnet18_v2.onnx"
 METADATA_PATH = VIDEOS_DIR / "metadata.json"
 
