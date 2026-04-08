@@ -4,7 +4,7 @@ const videoEl = document.getElementById('example-video');
 const canvasEl = document.getElementById('work-canvas');
 const selectEl = document.getElementById('example-select');
 
-const speedLimitEl = document.getElementById('speed-limit');
+const speedLimitSignEl = document.getElementById('speed-limit-sign');
 const weatherEl = document.getElementById('weather');
 const recommendedEl = document.getElementById('recommended');
 const classificationEl = document.getElementById('classification');
@@ -21,6 +21,23 @@ const state = {
   examples: [],
   useCrop: true,
 };
+
+const SUPPORTED_SPEED_SIGNS = new Set([30, 40, 50, 60, 70, 80, 90, 100, 110]);
+
+function speedSignPath(speedLimit) {
+  const speed = SUPPORTED_SPEED_SIGNS.has(speedLimit) ? speedLimit : 60;
+  return `/driving/static/speed-limit-signs/362_${speed}.webp`;
+}
+
+function weatherFromMetadata(example) {
+  return {
+    temp_c: Number(example.temp ?? 1.0),
+    humidity: Number(example.humidity ?? 80.0),
+    precip_mm_h: Number(example.precipitation ?? 0.0),
+    summary: 'metadata',
+    source: 'metadata',
+  };
+}
 
 function renderCropMode() {
   if (cropToggleEl) {
@@ -94,10 +111,13 @@ async function fetchContextForExample(example) {
   }
 
   state.speedLimit = data.speed_limit;
-  state.weather = data.weather;
+  state.weather = weatherFromMetadata(example);
 
-  speedLimitEl.textContent = String(data.speed_limit);
-  weatherEl.textContent = `${data.weather.summary}, ${data.weather.temp_c.toFixed(1)} C`;
+  if (speedLimitSignEl) {
+    speedLimitSignEl.src = speedSignPath(state.speedLimit);
+    speedLimitSignEl.alt = `Speed limit ${state.speedLimit} km/h`;
+  }
+  weatherEl.textContent = `Temp: ${state.weather.temp_c.toFixed(1)} C | Humidity: ${state.weather.humidity.toFixed(0)}% | Precip: ${state.weather.precip_mm_h.toFixed(1)} mm/h`;
 }
 
 async function updateRecommendation() {

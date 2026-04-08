@@ -18,9 +18,11 @@
       <canvas id="work-canvas" width="224" height="224" aria-hidden="true"></canvas>
       <div id="model-crop-overlay" class="model-crop-overlay"></div>
 
-      <div class="overlay top-left">Speed limit: <strong id="speed-limit">--</strong> km/h</div>
+      <div class="overlay top-left speed-sign-overlay">
+        <img id="speed-limit-sign" class="speed-limit-sign" src="" alt="Speed limit sign" />
+      </div>
       <div class="overlay top-right">Weather: <strong id="weather">--</strong></div>
-      <div class="overlay bottom-center">Recommended: <strong id="recommended">--</strong> km/h</div>
+      <div class="overlay top-left-recommended">Recommended: <strong id="recommended">--</strong> km/h</div>
       <div class="overlay bottom-left">Local class: <strong id="classification">--</strong></div>
     </section>
   </main>
