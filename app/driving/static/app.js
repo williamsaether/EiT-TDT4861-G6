@@ -18,6 +18,7 @@ const state = {
   weather: { temp_c: 1, precip_mm_h: 0, humidity: 80, summary: 'clear' },
   location: null,
   useCrop: true,
+  classifier: null,
 };
 
 const SUPPORTED_SPEED_SIGNS = new Set([30, 40, 50, 60, 70, 80, 90, 100, 110]);
@@ -52,6 +53,23 @@ async function setupCamera() {
     console.error(`Camera error: ${error.message}`);
     throw error;
   }
+}
+
+async function setupClassifier() {
+  const res = await fetch('/driving/api/models');
+  const data = await res.json();
+  if (!data.ok || !Array.isArray(data.models) || data.models.length === 0) {
+    throw new Error('No ONNX models available');
+  }
+
+  const modelName = data.current || data.models[0];
+  state.classifier = new window.DrivingOnnxClassifier({
+    modelUrl: `/driving/models/${encodeURIComponent(modelName)}`,
+    classNames: data.class_names || [],
+    excludedClasses: data.excluded_classes || [],
+    imageSize: data.image_size || 224,
+  });
+  await state.classifier.init();
 }
 
 function getLocation() {
@@ -95,7 +113,11 @@ async function fetchContext() {
   weatherEl.textContent = `${data.weather.summary}, ${data.weather.temp_c.toFixed(1)} C`;
 }
 
-function classifyFrameLocally() {
+async function classifyFrameLocally() {
+  if (!state.classifier || !state.classifier.ready) {
+    return null;
+  }
+
   const vw = cameraEl.videoWidth || 0;
   const vh = cameraEl.videoHeight || 0;
   if (state.useCrop && vw > 0 && vh > 0) {
@@ -107,46 +129,9 @@ function classifyFrameLocally() {
   } else {
     ctx.drawImage(cameraEl, 0, 0, canvasEl.width, canvasEl.height);
   }
-  const frame = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height).data;
 
-  let sumR = 0;
-  let sumG = 0;
-  let sumB = 0;
-  let n = 0;
-
-  for (let i = 0; i < frame.length; i += 4 * 8) {
-    sumR += frame[i];
-    sumG += frame[i + 1];
-    sumB += frame[i + 2];
-    n += 1;
-  }
-
-  const avgR = sumR / n;
-  const avgG = sumG / n;
-  const avgB = sumB / n;
-  const brightness = (avgR + avgG + avgB) / 3;
-
-  let label = 'wet_asphalt';
-  let confidence = 0.6;
-
-  if (brightness > 165 && avgB > avgR) {
-    label = 'fresh_snow';
-    confidence = 0.78;
-  } else if (brightness > 145 && avgB - avgR > 14) {
-    label = 'ice';
-    confidence = 0.72;
-  } else if (brightness < 95) {
-    label = 'wet_asphalt';
-    confidence = 0.69;
-  } else if (brightness >= 95 && brightness < 145) {
-    label = 'dry_asphalt';
-    confidence = 0.64;
-  }
-
-  return {
-    label,
-    confidence,
-  };
+  const imageData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+  return state.classifier.classify(imageData);
 }
 
 async function updateRecommendation() {
@@ -154,7 +139,12 @@ async function updateRecommendation() {
     return;
   }
 
-  const classification = classifyFrameLocally();
+  const classification = await classifyFrameLocally();
+  if (!classification) {
+    classificationEl.textContent = 'loading model...';
+    return;
+  }
+
   classificationEl.textContent = `${classification.label} (${classification.confidence.toFixed(2)})`;
 
   const res = await fetch('/driving/api/recommend', {
@@ -183,6 +173,7 @@ async function start() {
   });
 
   await setupCamera();
+  await setupClassifier();
   await fetchContext();
 
   await updateRecommendation();

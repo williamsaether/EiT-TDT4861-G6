@@ -27,6 +27,8 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.min.js" crossorigin="anonymous"></script>
+  <script src="{{ url_for('driving.static', filename='onnx_classifier.js') }}"></script>
   <script src="{{ url_for('driving.static', filename='app.js') }}"></script>
 </body>
 </html>
