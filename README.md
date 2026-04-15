@@ -91,13 +91,15 @@ git lfs pull
 ## How It Works
 
 1. **Driving Demo (`/driving`)**:
-   - Frontend captures camera frames and performs local classification in-browser (simulating on-device/car inference).
-   - Backend receives classification + confidence, fetches weather context, resolves speed limit from Norwegian NVDB (`nvdbapiles.atlas.vegvesen.no`) with metadata fallback, and computes recommended speed.
+   - Frontend captures camera frames and runs local ONNX inference in-browser (simulating on-device/car inference).
+   - Frontend applies temporal smoothing over recent class-score vectors using `smooth_window_sec` from the active driving profile.
+   - Backend receives classification + confidence + class scores, fetches weather context, resolves speed limit from Norwegian NVDB (`nvdbapiles.atlas.vegvesen.no`) with metadata fallback, applies shared heuristics, and computes recommended speed.
    - UI overlays current speed limit, weather, classification, and recommended speed on top of the live camera feed.
    - Example-video mode (`/driving/examples`) uses only `metadata.json` entries with `forTraining: false`.
 2. **Auto-Tuning Dashboard (`/tuning`)**:
    - Runs ONNX inference on the prerecorded videos.
-   - Lets you tune camera/weather blending parameters and compare against survey targets.
+   - Uses the same shared class-score heuristics as driving to reduce behavior mismatch.
+   - Lets you tune camera/weather blending parameters (including temporal smoothing) and compare against survey targets.
 
 ## Training / Exporting a New Model
 
@@ -114,7 +116,13 @@ python camera_model/evaluate_saved_models.py
 # (reads models/checkpoints and writes models/eval/eval_summary.json by default)
 ```
 
-The web demo automatically discovers all `.onnx` files in `models/onnx/` and lets you switch between them in the UI.
+ONNX models are discovered from `models/onnx/`. The tuning UI lets you switch models.
+
+## Tuned Parameters
+
+- Shared defaults live in `app/common/tuned_params.py` (`AUTO_TUNED_PROFILE`), including `smooth_window_sec`.
+- Driving loads its active profile from `app/driving/config/settings.json` + `app/driving/config/profiles/*.json`.
+- Tuning can optimize and persist parameters (including `smooth_window_sec`) via auto-tune logs and settings.
 
 ## Authors & License
 
