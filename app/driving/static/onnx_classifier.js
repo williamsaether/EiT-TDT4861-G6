@@ -101,9 +101,11 @@
 
       let bestLabel = 'unknown';
       let bestProb = 0;
+      const scores = {};
 
       for (const item of this.classIndices) {
         const normalized = probsSum > 0 ? probs[item.idx] / probsSum : 0;
+        scores[item.name] = Number(normalized.toFixed(6));
         if (normalized > bestProb) {
           bestProb = normalized;
           bestLabel = item.name;
@@ -113,6 +115,7 @@
       return {
         label: bestLabel,
         confidence: Number(bestProb.toFixed(4)),
+        scores,
       };
     }
   }

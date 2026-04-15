@@ -245,7 +245,15 @@ def api_video_predictions(video_id: str) -> Any:
             video_meta["temp_c"], video_meta["precipitation_mm_h"]
         )
         avg = analyzer.get_avg_scores(video_id)
-        rec = compute_recommendation(avg, video_meta["posted_speed"], tuning_state, weather_factor=wf)
+        rec = compute_recommendation(
+            avg,
+            video_meta["posted_speed"],
+            tuning_state,
+            weather_factor=wf,
+            temp_c=float(video_meta["temp_c"]),
+            humidity=float(video_meta["humidity"]) if video_meta.get("humidity") is not None else None,
+            precip_mm_h=float(video_meta["precipitation_mm_h"]),
+        )
 
     return jsonify(
         {
@@ -283,6 +291,9 @@ def api_frame_recommendation(video_id: str) -> Any:
             video_meta["posted_speed"],
             tuning_state,
             weather_factor=wf,
+            temp_c=float(video_meta["temp_c"]),
+            humidity=float(video_meta["humidity"]) if video_meta.get("humidity") is not None else None,
+            precip_mm_h=float(video_meta["precipitation_mm_h"]),
         )
     return jsonify(rec)
 

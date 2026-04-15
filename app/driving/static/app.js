@@ -19,6 +19,8 @@ const state = {
   location: null,
   useCrop: true,
   classifier: null,
+  smoothWindowSec: 3.0,
+  scoreHistory: [],
 };
 
 const SUPPORTED_SPEED_SIGNS = new Set([30, 40, 50, 60, 70, 80, 90, 100, 110]);
@@ -35,6 +37,64 @@ function renderCropMode() {
   if (cropOverlayEl) {
     cropOverlayEl.style.display = state.useCrop ? 'block' : 'none';
   }
+}
+
+function normalizeScores(scores) {
+  if (!scores || typeof scores !== 'object') return {};
+  let total = 0;
+  const out = {};
+  for (const [k, v] of Object.entries(scores)) {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    out[k] = n;
+    total += n;
+  }
+  if (total <= 0) return {};
+  for (const k of Object.keys(out)) {
+    out[k] /= total;
+  }
+  return out;
+}
+
+function applyTemporalSmoothing(scores) {
+  const normalized = normalizeScores(scores);
+  if (!Object.keys(normalized).length) {
+    return normalized;
+  }
+
+  const now = Date.now();
+  state.scoreHistory.push({ ts: now, scores: normalized });
+
+  const windowMs = Math.max(100, Math.round(state.smoothWindowSec * 1000));
+  const minTs = now - windowMs;
+  state.scoreHistory = state.scoreHistory.filter((x) => x.ts >= minTs);
+
+  const aggregate = {};
+  let n = 0;
+  for (const item of state.scoreHistory) {
+    n += 1;
+    for (const [label, value] of Object.entries(item.scores)) {
+      aggregate[label] = (aggregate[label] || 0) + value;
+    }
+  }
+  if (n <= 0) return normalized;
+
+  for (const label of Object.keys(aggregate)) {
+    aggregate[label] /= n;
+  }
+  return normalizeScores(aggregate);
+}
+
+function pickTopClass(scores) {
+  let bestLabel = 'unknown';
+  let bestScore = 0;
+  for (const [label, score] of Object.entries(scores || {})) {
+    if (score > bestScore) {
+      bestScore = score;
+      bestLabel = label;
+    }
+  }
+  return { label: bestLabel, confidence: bestScore };
 }
 
 async function setupCamera() {
@@ -69,6 +129,9 @@ async function setupClassifier() {
     excludedClasses: data.excluded_classes || [],
     imageSize: data.image_size || 224,
   });
+  const smoothSec = Number(data.smooth_window_sec);
+  state.smoothWindowSec = Number.isFinite(smoothSec) && smoothSec > 0 ? smoothSec : 3.0;
+  state.scoreHistory = [];
   await state.classifier.init();
 }
 
@@ -131,7 +194,14 @@ async function classifyFrameLocally() {
   }
 
   const imageData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
-  return state.classifier.classify(imageData);
+  const raw = await state.classifier.classify(imageData);
+  const smoothedScores = applyTemporalSmoothing(raw.scores || {});
+  const top = pickTopClass(smoothedScores);
+  return {
+    label: top.label,
+    confidence: Number(top.confidence.toFixed(4)),
+    scores: smoothedScores,
+  };
 }
 
 async function updateRecommendation() {
@@ -169,6 +239,7 @@ async function start() {
   renderCropMode();
   cropToggleEl?.addEventListener('click', () => {
     state.useCrop = !state.useCrop;
+    state.scoreHistory = [];
     renderCropMode();
   });
 

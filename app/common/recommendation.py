@@ -5,6 +5,63 @@ from typing import Any, Dict, Tuple
 from app.common.tuned_params import CLASS_TO_DIFFICULTY, AUTO_TUNED_PROFILE
 
 
+def _normalize_scores(scores: Dict[str, float]) -> Dict[str, float]:
+    cleaned: Dict[str, float] = {}
+    for key, value in scores.items():
+        try:
+            v = float(value)
+        except (TypeError, ValueError):
+            continue
+        cleaned[str(key)] = max(0.0, v)
+
+    total = sum(cleaned.values())
+    if total <= 0:
+        return {}
+    return {k: v / total for k, v in cleaned.items()}
+
+
+def _top_label(scores: Dict[str, float]) -> Tuple[str, float]:
+    if not scores:
+        return "unknown", 0.0
+    label, confidence = max(scores.items(), key=lambda item: item[1])
+    return str(label), float(confidence)
+
+
+def apply_heuristics(
+    scores: Dict[str, float],
+    *,
+    temp_c: float | None,
+    humidity: float | None,
+    precip_mm_h: float | None,
+    speed_limit: float | None,
+) -> Dict[str, float]:
+    """Apply research heuristics to class scores, then renormalize."""
+    adjusted = _normalize_scores(scores)
+    if not adjusted:
+        return {}
+
+    if temp_c is not None:
+        if temp_c >= 7.0 and "ice" in adjusted:
+            adjusted["ice"] = 0.0
+        if temp_c >= 5.0 and "fresh_snow" in adjusted:
+            adjusted["fresh_snow"] = 0.0
+
+        boost_ice = False
+        if temp_c < 2.0:
+            wet_or_humid = (humidity is not None and humidity > 70.0) or ((precip_mm_h or 0.0) >= 0.5)
+            near_freezing = -2.0 < temp_c < 2.0
+            boost_ice = wet_or_humid or near_freezing
+        if boost_ice and adjusted.get("ice", 0.0) > 0.05:
+            adjusted["ice"] *= 1.5
+
+    if speed_limit is not None and speed_limit >= 80.0:
+        for label in list(adjusted.keys()):
+            if label == "gravel" or label == "mud" or label.endswith("_gravel") or label.endswith("_mud"):
+                adjusted[label] *= 0.1
+
+    return _normalize_scores(adjusted)
+
+
 def compute_weather_factor(
     temp_c: float,
     precip_mm_h: float,
@@ -39,12 +96,26 @@ def compute_recommendation(
     confidence: float,
     temp_c: float,
     precip_mm_h: float,
+    class_scores: Dict[str, float] | None = None,
+    humidity: float | None = None,
     params: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     profile = params or AUTO_TUNED_PROFILE
+    working_label = str(label)
     conf = max(0.0, min(confidence, 1.0))
 
-    difficulty = CLASS_TO_DIFFICULTY.get(label, 3)
+    if class_scores:
+        adjusted_scores = apply_heuristics(
+            class_scores,
+            temp_c=temp_c,
+            humidity=humidity,
+            precip_mm_h=precip_mm_h,
+            speed_limit=float(speed_limit),
+        )
+        if adjusted_scores:
+            working_label, conf = _top_label(adjusted_scores)
+
+    difficulty = CLASS_TO_DIFFICULTY.get(working_label, 3)
     camera_factor = float(profile["difficulty_factors"][difficulty])
     weather_factor, reasons = compute_weather_factor(
         temp_c=temp_c,

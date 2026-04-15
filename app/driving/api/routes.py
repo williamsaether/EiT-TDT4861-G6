@@ -14,6 +14,7 @@ from app.tuning.config import (
 )
 from app.driving.services.context_service import ContextService
 from app.driving.services.example_video_service import ExampleVideoService
+from app.driving.services.profile_loader import load_driving_profile
 from app.driving.services.recommendation_service import RecommendationService
 
 
@@ -65,6 +66,11 @@ def list_examples():
 def list_models():
     models = available_models()
     current = DEFAULT_MODEL_NAME if DEFAULT_MODEL_NAME in models else (models[0] if models else "")
+    profile = load_driving_profile()
+    try:
+        smooth_window_sec = float(profile.get("smooth_window_sec", 3.0))
+    except (TypeError, ValueError):
+        smooth_window_sec = 3.0
     return jsonify(
         {
             "ok": True,
@@ -73,6 +79,7 @@ def list_models():
             "class_names": CLASS_NAMES,
             "excluded_classes": sorted(EXCLUDED_CLASSES),
             "image_size": IMAGE_SIZE,
+            "smooth_window_sec": max(0.1, smooth_window_sec),
         }
     )
 

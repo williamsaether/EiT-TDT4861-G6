@@ -33,6 +33,12 @@ def _normalize_profile(raw: Dict[str, Any]) -> Dict[str, Any]:
         if key in weather:
             profile["weather_factors"][key] = float(weather[key])
 
+    try:
+        smooth_window_sec = float(raw.get("smooth_window_sec", profile.get("smooth_window_sec", 3.0)))
+    except (TypeError, ValueError):
+        smooth_window_sec = float(profile.get("smooth_window_sec", 3.0))
+    profile["smooth_window_sec"] = max(0.1, min(15.0, smooth_window_sec))
+
     return profile
 
 

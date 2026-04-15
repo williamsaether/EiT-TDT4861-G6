@@ -23,7 +23,7 @@ class TuningState:
         self.wf_heavy_precip: float = float(AUTO_TUNED_PROFILE["weather_factors"]["heavy_precip"])
         self.wf_near_freeze: float = float(AUTO_TUNED_PROFILE["weather_factors"]["near_freeze"])
         self.wf_freeze: float = float(AUTO_TUNED_PROFILE["weather_factors"]["freeze"])
-        self.smooth_window_sec: float = 3.0
+        self.smooth_window_sec: float = float(AUTO_TUNED_PROFILE.get("smooth_window_sec", 3.0))
 
     def compute_weather_factor(self, temp_c: float, precip_mm_h: float) -> Tuple[float, List[str]]:
         factor = 1.0

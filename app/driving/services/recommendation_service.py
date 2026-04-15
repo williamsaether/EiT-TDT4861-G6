@@ -17,10 +17,17 @@ class RecommendationService:
         classification = payload.get("classification") or {}
         label = str(classification.get("label", "unknown"))
         confidence = float(classification.get("confidence", 0.0))
+        scores_raw = classification.get("scores")
+        class_scores = scores_raw if isinstance(scores_raw, dict) else {}
 
         weather = payload.get("weather") or {}
         temp_c = float(weather.get("temp_c", 1.0))
         precip_mm_h = float(weather.get("precip_mm_h", 0.0))
+        humidity = weather.get("humidity")
+        try:
+            humidity_f = float(humidity) if humidity is not None else None
+        except (TypeError, ValueError):
+            humidity_f = None
 
         return compute_recommendation(
             speed_limit=speed_limit,
@@ -28,5 +35,7 @@ class RecommendationService:
             confidence=confidence,
             temp_c=temp_c,
             precip_mm_h=precip_mm_h,
+            class_scores=class_scores,
+            humidity=humidity_f,
             params=self.params,
         )

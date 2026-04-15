@@ -5,24 +5,25 @@ from typing import Any, Dict
 
 
 AUTO_TUNED_PROFILE: Dict[str, Any] = {
-    "w_camera": 11.0,
-    "w_weather": 5.0,
-    "w_confidence": 38.0,
-    "neutral_cam": 0.88,
+    "w_camera": 5.0,
+    "w_weather": 10.06,
+    "w_confidence": 40.0,
+    "neutral_cam": 0.92,
     "difficulty_factors": {
-        1: 1.00,
-        2: 1.00,
-        3: 1.00,
-        4: 0.63,
-        5: 0.20,
+        1: 1.0,
+        2: 1.0,
+        3: 1.0,
+        4: 0.517,
+        5: 0.561,
     },
     "weather_factors": {
-        "light_precip": 0.92,
-        "moderate_precip": 0.76,
-        "heavy_precip": 0.57,
-        "near_freeze": 1.00,
+        "light_precip": 0.84,
+        "moderate_precip": 0.86,
+        "heavy_precip": 0.693,
+        "near_freeze": 1.0,
         "freeze": 0.85,
     },
+    "smooth_window_sec": 3.75,
 }
 
 CLASS_TO_DIFFICULTY: Dict[str, int] = {
