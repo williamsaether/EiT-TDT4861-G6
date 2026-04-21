@@ -37,7 +37,11 @@ cd <repo>
 git lfs pull
 
 # 3. Run the unified app (driving demo + tuning dashboard)
+# macOS / Linux
 ./run.sh
+
+# Windows (Command Prompt)
+run.bat
 
 # 4. Open one of:
 #    http://localhost:8000/driving/
