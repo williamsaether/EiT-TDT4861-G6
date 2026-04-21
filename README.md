@@ -83,7 +83,8 @@ git lfs pull
   - `notebooks/`: Jupyter notebooks for model exploration and export.
 
 - **videos/**
-  - 10 demo MP4 clips (stored in Git LFS) with matching `metadata.json` containing GPS, weather, and speed-limit ground-truth data.
+  - 10 MP4 clips (stored in Git LFS) with matching `metadata.json` containing GPS, weather, and speed-limit ground-truth data. This is made specifically for tuning.
+  - 2 demo MP4 clips like above, made specifically for demonstration to avoid bias in the pipeline.
 
 - **merged_survey.csv**: Human survey data with recommended speeds per video, used to evaluate model accuracy.
 
