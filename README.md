@@ -1,7 +1,7 @@
 <div id="user-content-toc">
   <ul align="center" style="list-style: none;">
     <summary><h1>F.A.R.T: Føre-Adaptiv Risiko-Teknologi</h1></summary>
-    <summary><p>Traction-Adaptive Risk Technology. Intelligent Speed Limit Suggestion for Northern Road Conditions.
+    <summary><p>Condition-Adaptive Risk Technology. Intelligent Speed Limit Suggestion for Northern Road Conditions.
 </p></summary>
   </ul>
 </div>
