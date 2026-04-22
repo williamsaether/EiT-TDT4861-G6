@@ -27,7 +27,8 @@ class ExampleVideoService:
 
         examples: List[Dict[str, Any]] = []
         for entry in entries:
-            if bool(entry.get("forTraining", True)):
+            include_as_example = bool(entry.get("forExample", False)) or not bool(entry.get("forTraining", True))
+            if not include_as_example:
                 continue
             filename = str(entry.get("video", "")).strip()
             if not filename:
@@ -45,7 +46,7 @@ class ExampleVideoService:
                     "temp": float(entry.get("temp", 1.0)),
                     "humidity": float(entry.get("humidity", 80.0)),
                     "precipitation": float(entry.get("precipitation", 0.0)),
-                    "forTraining": False,
+                    "forTraining": bool(entry.get("forTraining", True)),
                 }
             )
 

@@ -240,7 +240,7 @@ async function loadExamples() {
 
   state.examples = data.examples;
   if (state.examples.length === 0) {
-    throw new Error('No non-training videos available in metadata.json');
+    throw new Error('No example videos available in metadata.json');
   }
 
   renderExampleOptions();

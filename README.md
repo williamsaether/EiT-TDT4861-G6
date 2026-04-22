@@ -99,7 +99,7 @@ run.bat
    - Frontend applies temporal smoothing over recent class-score vectors using `smooth_window_sec` from the active driving profile.
    - Backend receives classification + confidence + class scores, fetches weather context, resolves speed limit from Norwegian NVDB (`nvdbapiles.atlas.vegvesen.no`) with metadata fallback, applies shared heuristics, and computes recommended speed.
    - UI overlays current speed limit, weather, classification, and recommended speed on top of the live camera feed.
-   - Example-video mode (`/driving/examples`) uses only `metadata.json` entries with `forTraining: false`.
+   - Example-video mode (`/driving/examples`) uses `metadata.json` entries with either `forTraining: false` or `forExample: true`.
 2. **Auto-Tuning Dashboard (`/tuning`)**:
    - Runs ONNX inference on the prerecorded videos.
    - Uses the same shared class-score heuristics as driving to reduce behavior mismatch.

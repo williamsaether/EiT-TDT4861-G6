@@ -69,6 +69,7 @@
         "temp": -9.5,
         "humidity": 99.0,
         "precipitation": 12.0,
+        "forExample": true,
         "forTraining": true
     },
     {
