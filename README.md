@@ -30,8 +30,8 @@ This project aims to intelligently suggest appropriate speed limits for roads in
 
 ```bash
 # 1. Clone the repo (Git LFS fetches videos and models automatically)
-git clone https://github.com/<your-org>/<repo>.git
-cd <repo>
+git clone https://github.com/williamsaether/EiT-TDT4861-G6.git
+cd EiT-TDT4861-G6
 
 # 2. If you cloned before installing Git LFS, fetch the large files manually
 git lfs pull
