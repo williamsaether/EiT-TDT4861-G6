@@ -1,12 +1,13 @@
 <div id="user-content-toc">
   <ul align="center" style="list-style: none;">
     <summary><h1>F.A.R.T: Føre-Adaptiv Risiko-Teknologi</h1></summary>
-    <summary><p>Condition-Adaptive Risk Technology. Intelligent Speed Limit Suggestion for Northern Road Conditions.
-</p></summary>
+    <summary><p>Condition-Adaptive Risk Technology. Intelligent Speed Limit Suggestion for Northern Road Conditions.</p></summary>
   </ul>
 </div>
 
 ## Overview
+
+F.A.R.T was developed during **EiT 2026** as part of [TDT4861 - Experts in Teamwork: AI and Big Data for Sustainable Development](https://www.ntnu.no/eit/tdt4861) at NTNU. The project was created by **Group 6 in the TDT4861 village** and won the **"Best Societal Value"** award at the [EiT Innovation Awards](https://www.ntnu.no/eit/innovation-awards), receiving **15,000 NOK sponsored by NTNU Discovery**.
 
 This project aims to intelligently suggest appropriate speed limits for roads in northern climates, taking into account real-time weather data, road conditions, and camera-based scene analysis. The system leverages machine learning, data pipelines, and a web-based demo to provide dynamic, context-aware speed limit recommendations, improving road safety and adapting to challenging environments such as snow, ice, and low visibility.
 
@@ -130,8 +131,9 @@ ONNX models are discovered from `models/onnx/`. The tuning UI lets you switch mo
 
 ## Authors & License
 
-- Developed by NTNU EiT Group 6 (TDT4861)
-- For academic and research use. See LICENSE (if available) for details.
+- Developed by **Group 6 in the TDT4861 village** during **EiT 2026** as part of [TDT4861 - Experts in Teamwork: AI and Big Data for Sustainable Development](https://www.ntnu.no/eit/tdt4861)
+- Winner of **"Best Societal Value"** at the [EiT Innovation Awards](https://www.ntnu.no/eit/innovation-awards), with a **15,000 NOK award sponsored by NTNU Discovery**
+- Licensed under the [MIT License](LICENSE).
 
 ---
 
