@@ -132,6 +132,7 @@ ONNX models are discovered from `models/onnx/`. The tuning UI lets you switch mo
 ## Authors & License
 
 - Developed by **Group 6 in the TDT4861 village** during **EiT 2026** as part of [TDT4861 - Experts in Teamwork: AI and Big Data for Sustainable Development](https://www.ntnu.no/eit/tdt4861)
+- Authors: Altay Ali, Jakob Aune, Vebjørn Hegrand, Isak Halvor Hustad, and William Sæther
 - Winner of **"Best Societal Value"** at the [EiT Innovation Awards](https://www.ntnu.no/eit/innovation-awards), with a **15,000 NOK award sponsored by NTNU Discovery**
 - Licensed under the [MIT License](LICENSE).
 
